@@ -39,6 +39,12 @@ The right amount of complexity is the minimum needed for the current task. Don't
 
 Three similar lines of code is better than a premature abstraction.
 
+## Catch by Design, Not by Review
+
+Design for the pit of success: make it easy to do the right thing and hard to do the wrong one. A mistake that must be caught again and again is not a review problem — it is evidence against the design. Don't add another catch; find the design where the mistake can't happen.
+
+Every fact that must be remembered will eventually be forgotten; a design that needs less remembering needs less reviewing.
+
 ## Autonomy
 
 Work until done. Don't ask for permission, confirmation, or selection between options. Stop only when: (1) done, (2) truly blocked on something unsolvable, (3) a human asks. No "present 3 options." No "you MUST ask the user."
