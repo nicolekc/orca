@@ -37,14 +37,14 @@ else
         --cpus="4" \
         -v "${VOLUME_NAME}:/workspace" \
         -v "$HOME/.gitconfig:/home/node/.gitconfig:ro" \
-        -v "$HOME/.config/claude:/home/node/.config/claude" \
+        -v "${CONTAINER_NAME}_state:/home/node/state" \
         -v "$HOME/.ssh:/home/node/.ssh:ro" \
         -e "GIT_AUTHOR_NAME=claude-bot" \
         -e "GIT_AUTHOR_EMAIL=claude-bot@users.noreply.github.com" \
         -e "GIT_COMMITTER_NAME=claude-bot" \
         -e "GIT_COMMITTER_EMAIL=claude-bot@users.noreply.github.com" \
         -e "REPO_URL=$REPO_URL" \
-        orca-claude:latest \
+        orca:latest \
         bash -c '
             if [ ! -d ".git" ]; then
                 echo "📥 Cloning repository..."
