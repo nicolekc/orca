@@ -11,6 +11,7 @@ Installed from the framework repo. Contains perspectives, processes, the seed, a
 ```
 .ralph/
   seed.md                  # Working style principles
+  seed-prd.md              # Working style for the PRD process
   ralph.md                 # Orchestrator instructions
   perspectives/
     architect.md

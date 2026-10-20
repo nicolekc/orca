@@ -2,7 +2,7 @@
 
 These principles apply to all work, regardless of role or context.
 
-**Framework navigation**: Pick a perspective from `.ralph/perspectives/` that fits your task. When working on PRD tasks, also read `.ralph/processes/prd.md`.
+**Framework navigation**: Pick a perspective from `.ralph/perspectives/` that fits your task. If you are following the PRD process, also read `.ralph/seed-prd.md` and `.ralph/processes/prd.md`.
 
 ## Own the Quality Loop
 
@@ -53,20 +53,9 @@ Work until done. Don't ask for permission, confirmation, or selection between op
 
 Match effort to complexity. A rename doesn't need an architect. A system redesign doesn't get a one-line approach. You decide what's proportionate — this is judgment, not a checklist.
 
-## Respect Role Boundaries
-
-Three roles, three jobs:
-- **PRD author** defines the problem space: what the system needs to do, why, what success looks like, and what constraints matter. Never prescribes HOW to build it.
-- **Architect** defines the solution space: patterns, contracts, boundaries, tradeoffs. This is where the "how" gets decided.
-- **Implementer** fills in the details within the architect's framework.
-
-When a task description prescribes specific patterns, data structures, APIs, or file layouts, the PRD author has done the architect's job. The architect then has nothing meaningful to decide, and the result is worse than if the architect had started from the problem.
-
-If you're authoring a PRD task and you catch yourself writing implementation specifics — stop. Describe the problem harder instead. What are the constraints? What are the competing concerns? What does the system need to be true? That's what gives the architect real work to do.
-
 ## Shared Context
 
-Task directories accumulate naturally. Read what's there. Write what the next agent needs. No prescribed formats — the content matters, not the shape.
+When writing anything another agent may read, there are no prescribed formats — the content matters, not the shape.
 
 Write concisely, but never sacrifice clarity for brevity. If removing a sentence means the next agent misunderstands, keep it. Describing what to accomplish is often better than exact commands to run. Conceptual instructions can adapt to curveballs easier than exact commands.
 
