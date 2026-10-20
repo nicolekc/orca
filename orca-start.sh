@@ -31,8 +31,23 @@ if [ -z "$FOLDER_NAME" ] || [ "$FOLDER_NAME" = "/" ]; then
 fi
 CONTAINER_NAME="${2:-orca-$FOLDER_NAME}"
 
+# The project's home folder (~ in the container): its logins, memory, sessions, settings
+PROJECT_DIR="$HOME/.orca/$FOLDER_NAME"
+HOME_DIR="$PROJECT_DIR/home"
+
 echo "🚀 Orca Container: $CONTAINER_NAME"
 echo "📁 Project: $PROJECT_PATH"
+echo "🏠 Home: $HOME_DIR"
+
+# One home per project: two folders with the same name must not share memory
+mkdir -p "$HOME_DIR"
+if [ ! -f "$PROJECT_DIR/project-path" ]; then
+    echo "$PROJECT_PATH" > "$PROJECT_DIR/project-path"
+elif [ "$(cat "$PROJECT_DIR/project-path")" != "$PROJECT_PATH" ]; then
+    echo "❌ $PROJECT_DIR belongs to $(cat "$PROJECT_DIR/project-path"), not this folder"
+    echo "   If that project moved here, update $PROJECT_DIR/project-path to this path"
+    exit 1
+fi
 
 # Handle --fresh: remove existing container
 if [ "$FRESH" = true ] && docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -60,14 +75,14 @@ else
         --cpus="4" \
         -v "$PROJECT_PATH:/workspace" \
         -v "${CONTAINER_NAME}_node_modules:/workspace/node_modules" \
-        -v "${CONTAINER_NAME}_state:/home/node/state" \
+        -v "$HOME_DIR:/home/node" \
         orca:latest \
         bash
     # Docker run options explained:
     #   --name              Container name (for resuming later)
     #   --memory, --cpus    Resource limits (adjust if needed)
     #   -v PROJECT:/workspace   Mount your project folder
-    #   -v ..._state:...    Claude/gh logins, memory, sessions (survive container removal)
+    #   -v HOME:/home/node  The project's home (~/.orca/<project>/home): survives container removal
     #   -v .gitconfig:...   Git config (read-only)
     #   -v .ssh:...         SSH keys for git push (read-only)
     #   -e GIT_AUTHOR_*     Commits show as "claude-bot" not you
