@@ -1,4 +1,4 @@
-# Ralph Framework
+# Orca Framework
 
 Composable tools for AI-assisted software development. Six independent pieces that prevent the death spiral of AI-assisted product development — use all of them, or just one.
 
@@ -9,14 +9,14 @@ See [WHY.md](WHY.md) for the motivation and design philosophy.
 ### Install into your project
 
 ```bash
-git clone https://github.com/nicolekc/ralph-docker.git ~/ralph
-~/ralph/install.sh ~/projects/my-app
+git clone https://github.com/nicolekc/orca-docker.git ~/orca
+~/orca/install.sh ~/projects/my-app
 ```
 
 This installs:
-- `.ralph/` — Framework core (perspectives, processes, seed, templates)
-- `.claude/skills/` — `/ralph`, `/discover`, `/refine` skills
-- `ralph-context/` — Scaffold for project-specific context
+- `.orca/` — Framework core (perspectives, processes, seed, templates)
+- `.claude/skills/` — `/orca`, `/discover`, `/refine` skills
+- `orca-context/` — Scaffold for project-specific context
 - `CLAUDE.md` — Project context file (populate with `/discover`)
 - `.claudeignore`, `.git-hooks/pre-push`, `.gitignore` additions
 
@@ -36,18 +36,18 @@ Write a PRD or have Claude help you create one:
 
 ```
 Create a PRD for [describe your feature].
-Save it to ralph-context/prds/001-feature-name.json
+Save it to orca-context/prds/001-feature-name.json
 ```
 
-Refine it with `/refine ralph-context/prds/001-feature-name.json`.
+Refine it with `/refine orca-context/prds/001-feature-name.json`.
 
-### Run Ralph
+### Run Orca
 
 ```
-/ralph ralph-context/prds/001-feature-name.json
+/orca orca-context/prds/001-feature-name.json
 ```
 
-Ralph reads the PRD, dispatches subagents to work through task pipelines, and pushes when done. Each task flows through a pipeline of perspectives (planner, architect, implementer, code-cleaner, etc.) — each one a subagent with clean context.
+Orca reads the PRD, dispatches subagents to work through task pipelines, and pushes when done. Each task flows through a pipeline of perspectives (planner, architect, implementer, code-cleaner, etc.) — each one a subagent with clean context.
 
 ## How It Works
 
@@ -74,7 +74,7 @@ The planner decides which perspectives a task needs. The orchestrator walks the 
 
 ### Perspectives
 
-Different lenses on the same work. Each perspective reads `.ralph/perspectives/<name>.md` for its instructions:
+Different lenses on the same work. Each perspective reads `.orca/perspectives/<name>.md` for its instructions:
 
 | Perspective | What it does |
 |-------------|--------------|
@@ -109,27 +109,27 @@ PRDs define tasks with outcomes and verification — not step-by-step instructio
 }
 ```
 
-See `.ralph/templates/prd.json` for the template.
+See `.orca/templates/prd.json` for the template.
 
 ### Durable Context
 
-Each task can accumulate context in `ralph-context/tasks/<prd-name>/<task-id>/`. Research notes, design decisions, investigation results — anything the next perspective needs. This is how knowledge persists across the pipeline.
+Each task can accumulate context in `orca-context/tasks/<prd-name>/<task-id>/`. Research notes, design decisions, investigation results — anything the next perspective needs. This is how knowledge persists across the pipeline.
 
 ## Execution Modes
 
 ### Subagent Mode (primary)
 
-For interactive Claude Code sessions. Run `/ralph <prd-path>`. Ralph dispatches subagents, each handling one pipeline step for one task.
+For interactive Claude Code sessions. Run `/orca <prd-path>`. Orca dispatches subagents, each handling one pipeline step for one task.
 
 ### Bash Loop Mode (Docker)
 
 For headless execution. Install with `--bash-loop` flag, then run inside a Docker container:
 
 ```bash
-./ralph-loop.sh ralph-context/prds/001-feature.json 20
+./orca-loop.sh orca-context/prds/001-feature.json 20
 ```
 
-Each iteration reads `RALPH_PROMPT.md` (a thin wrapper around `.ralph/ralph.md`) and completes one pipeline step.
+Each iteration reads `ORCA_PROMPT.md` (a thin wrapper around `.orca/orca.md`) and completes one pipeline step.
 
 ## Repository Structure
 
@@ -138,22 +138,22 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 | Directory | Purpose |
 |-----------|---------|
 | `framework/` | **Source** of framework files. All edits go here. |
-| `.ralph/` | **Installed copy** of `framework/`. Never edit directly. |
-| `ralph-context/` | Project-specific context (overrides, knowledge, PRDs, designs, tasks) |
-| `.ralph-tasks/` | Ephemeral agent workspaces (disposable after merge) |
+| `.orca/` | **Installed copy** of `framework/`. Never edit directly. |
+| `orca-context/` | Project-specific context (overrides, knowledge, PRDs, designs, tasks) |
+| `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
-| `.claude/skills/` | Claude Code skills (`/ralph`, `/discover`, `/refine`) |
+| `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |
 | `templates/` | Install templates (CLAUDE.md.template, .claudeignore, .git-hooks) |
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `.ralph/seed.md` | Working style principles — read before any task |
-| `.ralph/ralph.md` | Orchestrator instructions |
-| `.ralph/processes/prd.md` | Pipeline model and task lifecycle |
+| `.orca/seed.md` | Working style principles — read before any task |
+| `.orca/orca.md` | Orchestrator instructions |
+| `.orca/processes/prd.md` | Pipeline model and task lifecycle |
 | `install.sh` | Installs the framework into a target project |
-| `RALPH_PROMPT.md` | Bash-loop mode instructions (thin wrapper around ralph.md) |
+| `ORCA_PROMPT.md` | Bash-loop mode instructions (thin wrapper around orca.md) |
 
 ## Design Principles
 
@@ -165,7 +165,7 @@ The framework is governed by [11 design principles](docs/design-principles.md). 
 
 ## Git Workflow
 
-- One branch per PRD: `ralph/<prd-name>`
+- One branch per PRD: `orca/<prd-name>`
 - One PR per PRD, created after the first completed pipeline step
 - The PR evolves with each push — it's a living dashboard of progress
 - Never push to main directly

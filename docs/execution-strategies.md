@@ -1,28 +1,28 @@
 # Execution Strategies
 
-Ralph can run in two modes. Both share `.ralph/ralph.md` as the single source of truth for core instructions (startup, roles, execution invariants, branch/PR). Mode-specific behavior is handled by thin wrappers.
+Orca can run in two modes. Both share `.orca/orca.md` as the single source of truth for core instructions (startup, roles, execution invariants, branch/PR). Mode-specific behavior is handled by thin wrappers.
 
 ## Subagent Mode (Subscription Plan)
 
 For interactive Claude sessions (Claude Max subscription). No bash wrapper needed.
 
 1. Start a Claude Code session in your project
-2. Run `/ralph ralph-context/prds/your-feature.json`
-3. The `/ralph` skill points Ralph to `.ralph/ralph.md` (core instructions) plus the subagent-mode section within it
+2. Run `/orca orca-context/prds/your-feature.json`
+3. The `/orca` skill points Orca to `.orca/orca.md` (core instructions) plus the subagent-mode section within it
 4. Each perspective (planner, architect, implementer, code-cleaner, etc.) is a subagent with clean context
-5. Ralph coordinates, commits, and pushes when done
+5. Orca coordinates, commits, and pushes when done
 
 **Advantages:** Works on subscription. Clean context per task. Interactive -- you can interrupt.
 
-**Setup:** Install the framework to your project (`install.sh` copies `.ralph/`, `.claude/skills/`, and scaffolds `ralph-context/`).
+**Setup:** Install the framework to your project (`install.sh` copies `.orca/`, `.claude/skills/`, and scaffolds `orca-context/`).
 
 ## Bash Loop Mode (API / Docker)
 
 For headless execution in Docker containers. Uses `claude -p` (print mode).
 
-1. Enter the Docker container: `ralph-start.sh /path/to/project`
-2. Run: `./ralph-loop.sh prds/your-feature.json 20`
-3. Each iteration reads `RALPH_PROMPT.md` (a thin wrapper that points to `.ralph/ralph.md`) and completes one pipeline step
+1. Enter the Docker container: `orca-start.sh /path/to/project`
+2. Run: `./orca-loop.sh prds/your-feature.json 20`
+3. Each iteration reads `ORCA_PROMPT.md` (a thin wrapper that points to `.orca/orca.md`) and completes one pipeline step
 4. Loop continues until all tasks done or max iterations reached
 
 **Advantages:** Unattended. Can run overnight. Docker isolation.
@@ -38,4 +38,4 @@ For headless execution in Docker containers. Uses `claude -p` (print mode).
 | Context | Clean per subagent | Clean per iteration |
 | Cost model | Rate-limited messages | Per-token billing |
 | Docker required | No | Yes |
-| Core instructions | `.ralph/ralph.md` | `.ralph/ralph.md` (via `RALPH_PROMPT.md`) |
+| Core instructions | `.orca/orca.md` | `.orca/orca.md` (via `ORCA_PROMPT.md`) |

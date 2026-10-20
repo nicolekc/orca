@@ -48,7 +48,7 @@ When splitting:
 - Add sub-tasks to the PRD: `003` becomes `003a`, `003b`, `003c`.
 - Mark the parent `"status": "split"`.
 - Each child starts with an empty pipeline — it enters from planning like any other task.
-- Create a folder per sub-task in `ralph-context/tasks/<prd-name>/` with enough context that the sub-task is self-sufficient.
+- Create a folder per sub-task in `orca-context/tasks/<prd-name>/` with enough context that the sub-task is self-sufficient.
 
 ## Verification Cascade
 
@@ -66,7 +66,7 @@ The key: verification thinking flows DOWN the pipeline, getting more concrete at
 
 ## Durable Context
 
-Each task gets a folder at `ralph-context/tasks/<prd-name>/<task-id>/`. **Before starting your step, read what prior roles left there.** Write what the next role needs. No prescribed format.
+Each task gets a folder at `orca-context/tasks/<prd-name>/<task-id>/`. **Before starting your step, read what prior roles left there.** Write what the next role needs. No prescribed format.
 
 The most important handoff: the architect's design notes inform the implementer's approach — including verification thinking embedded in the architecture. If you're the implementer and there's no context folder, you're either the first role or something went wrong — check the pipeline.
 
@@ -131,7 +131,7 @@ The orchestrator does **not** silently fix issues. Reopen tasks for real gaps. D
 
 ## Branch and PR
 
-One branch per PRD: `ralph/<prd-name>`. One PR per PRD.
+One branch per PRD: `orca/<prd-name>`. One PR per PRD.
 
 Create the PR after the first completed pipeline step — don't wait until the end. The PR is a living view of progress. Each runner pushes after finishing their work so the PR stays current.
 

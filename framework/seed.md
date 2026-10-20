@@ -2,7 +2,7 @@
 
 These principles apply to all work, regardless of role or context.
 
-**Framework navigation**: Pick a perspective from `.ralph/perspectives/` that fits your task. If you are following the PRD process, also read `.ralph/seed-prd.md` and `.ralph/processes/prd.md`.
+**Framework navigation**: Pick a perspective from `.orca/perspectives/` that fits your task. If you are following the PRD process, also read `.orca/seed-prd.md` and `.orca/processes/prd.md`.
 
 ## Own the Quality Loop
 

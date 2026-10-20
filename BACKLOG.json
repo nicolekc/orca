@@ -1,5 +1,5 @@
 {
-  "description": "Pre-PRD backlog for the Ralph framework. Items here track learnings, unsolved problems, and future improvements that need attention but aren't ready to execute yet. Every item preserves WHY it was identified.",
+  "description": "Pre-PRD backlog for the Orca framework. Items here track learnings, unsolved problems, and future improvements that need attention but aren't ready to execute yet. Every item preserves WHY it was identified.",
   "types": {
     "improvement": "We know what to do, just haven't done it yet",
     "unsolved_problem": "We know this is an issue but don't have a solution design",
@@ -43,7 +43,7 @@
       "priority": "high",
       "description": "Add the PRD authoring principle ('you are NOT the architect — define the problem space richly') to seed.md as a working principle. Currently only in PRD_REFINE.md which is a review-time check, but the principle governs all task writing.",
       "why": "Agents writing PRD tasks without this principle consistently over-prescribed implementation details (specific classes, data structures, file layouts), leaving architects with nothing to decide. The principle needs to be internalized before writing, not just caught during review.",
-      "source": "Orchestrator CLAUDE.md, PRD Authoring section; ralph-context/prds/PRD_REFINE.md",
+      "source": "Orchestrator CLAUDE.md, PRD Authoring section; orca-context/prds/PRD_REFINE.md",
       "example_content": "When writing PRD tasks, you are NOT the architect. Your job is to define the problem space richly enough that the architect has real decisions to make. Never prescribe patterns, classes, data structures, file layouts, or communication protocols in task descriptions.\n\nTest every task you write: Would an architect reading this have genuine architectural decisions to make? If not, you've either under-visioned (too thin) or over-prescribed (did their job)."
     },
     {
@@ -81,10 +81,10 @@
       "title": "Branch strategy configuration",
       "type": "unsolved_problem",
       "priority": "med",
-      "description": "Ralph defaults to one-branch-per-PRD. Some projects need a single long-lived branch. Currently handled via ad-hoc CLAUDE.md overrides. Needs a principled configuration mechanism.",
+      "description": "Orca defaults to one-branch-per-PRD. Some projects need a single long-lived branch. Currently handled via ad-hoc CLAUDE.md overrides. Needs a principled configuration mechanism.",
       "why": "The Ask Anything POC couldn't use per-PRD branches because the working branch was a namespace within a repo we don't own. The override worked but was fragile — agents sometimes created branches anyway despite the CLAUDE.md instruction.",
       "source": "Orchestrator CLAUDE.md, Branch override section",
-      "example_content": "Branch override: The Ralph process says 'one branch per PRD' but this project uses a single long-lived branch per repo. All PRD work lands on that branch. Do not create new branches per PRD."
+      "example_content": "Branch override: The Orca process says 'one branch per PRD' but this project uses a single long-lived branch per repo. All PRD work lands on that branch. Do not create new branches per PRD."
     },
     {
       "id": "B009",

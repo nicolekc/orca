@@ -18,7 +18,7 @@
     {
       "id": "002",
       "name": "Reconcile script differences",
-      "description": "Compare the actual scripts (ralph-start.sh, ralph-clone.sh, ralph-once.sh) with the README versions. Document which version is correct (likely the actual files are newer/improved). Update README references to point to the actual files as the source of truth.",
+      "description": "Compare the actual scripts (orca-start.sh, orca-clone.sh, orca-once.sh) with the README versions. Document which version is correct (likely the actual files are newer/improved). Update README references to point to the actual files as the source of truth.",
       "acceptanceCriteria": [
         "Documented differences between README and actual files",
         "Decision made on which version is canonical",
@@ -29,7 +29,7 @@
     {
       "id": "003",
       "name": "Restructure README to reference files",
-      "description": "Transform README.md from containing full file contents to referencing the actual files. For each script/file:\n- Remove the heredoc/cat block with full contents\n- Add a link to the actual file in the repo\n- Keep brief description of what the file does\n- Optionally show key usage examples\n\nThe README should become a guide that says 'see [ralph-start.sh](ralph-start.sh) for the script' rather than embedding the entire script.",
+      "description": "Transform README.md from containing full file contents to referencing the actual files. For each script/file:\n- Remove the heredoc/cat block with full contents\n- Add a link to the actual file in the repo\n- Keep brief description of what the file does\n- Optionally show key usage examples\n\nThe README should become a guide that says 'see [orca-start.sh](orca-start.sh) for the script' rather than embedding the entire script.",
       "acceptanceCriteria": [
         "No duplicated file contents in README",
         "All scripts/templates are linked from README",

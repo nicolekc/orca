@@ -1,7 +1,7 @@
 {
   "sprint": "DRY RUN TEST - DO NOT COMMIT",
   "created": "2026-01-14",
-  "overview": "THIS IS A TEST PRD FOR TESTING THE RALPH-LOOP.SH SCRIPT. You MAY edit this PRD file to mark tasks complete, but DO NOT commit any changes to git.",
+  "overview": "THIS IS A TEST PRD FOR TESTING THE ORCA-LOOP.SH SCRIPT. You MAY edit this PRD file to mark tasks complete, but DO NOT commit any changes to git.",
   "note": "⚠️ CRITICAL OVERRIDE INSTRUCTIONS: This is a DRY RUN test. You CAN edit this PRD file to flip testsPassing from false to true. You MUST NOT run git commit, git push, or git add. Work through tasks one at a time, marking each testsPassing: true before moving to the next.",
   "overrideInstructions": {
     "NO_GIT_COMMANDS": "DO NOT run git commit, git push, git add, or any git commands",

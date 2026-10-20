@@ -90,4 +90,4 @@ The libraries named here are for React code that has not already chosen one. Whe
 
 ---
 
-> Forked from [`ui-skills`](https://github.com/edmundmiller/dotfiles/tree/HEAD/skills/catalog/ui-skills) (edmundmiller/dotfiles, MIT), fork point 2026-09-22. Changes and their reasons: [`.ralph/perspectives/ux-designer/SOURCES.md`](../../../.ralph/perspectives/ux-designer/SOURCES.md).
+> Forked from [`ui-skills`](https://github.com/edmundmiller/dotfiles/tree/HEAD/skills/catalog/ui-skills) (edmundmiller/dotfiles, MIT), fork point 2026-09-22. Changes and their reasons: [`.orca/perspectives/ux-designer/SOURCES.md`](../../../.orca/perspectives/ux-designer/SOURCES.md).

@@ -60,7 +60,7 @@ Verification gets more concrete as the pipeline progresses. The PRD should NOT s
 
 ## Task Order
 
-Task IDs are for REFERENCE ONLY — not execution order. Ralph picks the best next task dynamically based on what's done, what makes sense, and dependencies.
+Task IDs are for REFERENCE ONLY — not execution order. Orca picks the best next task dynamically based on what's done, what makes sense, and dependencies.
 
 If tasks have hard dependencies, note them in the `dependencies` array.
 

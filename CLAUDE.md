@@ -1,27 +1,27 @@
-# Ralph Framework
+# Orca Framework
 
-This repo is the Ralph agent framework — composable tools for AI-assisted software development. It is also self-hosting: the framework is installed into itself for development.
+This repo is the Orca agent framework — composable tools for AI-assisted software development. It is also self-hosting: the framework is installed into itself for development.
 
-## Ralph Framework
+## Orca Framework
 
-Read `.ralph/seed.md` before starting any task.
+Read `.orca/seed.md` before starting any task.
 
 ## What This Repo Contains
 
 - `framework/` — **Source** of framework files (perspectives, processes, seed, templates). This is the canonical version. **ALL edits to framework files go here.**
-- `.ralph/` — **Installed copy** of `framework/`. **NEVER edit .ralph/ directly** — edit in `framework/` and sync.
-- `ralph-context/` — Project-specific context (overrides, knowledge, designs, PRDs, durable task context)
-- `.ralph-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
+- `.orca/` — **Installed copy** of `framework/`. **NEVER edit .orca/ directly** — edit in `framework/` and sync.
+- `orca-context/` — Project-specific context (overrides, knowledge, designs, PRDs, durable task context)
+- `.orca-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
 - `docs/` — Framework design documentation
-- `.claude/skills/` — Claude Code skills (`/ralph`, `/discover`, `/refine`)
-- Docker/bash infrastructure — `Dockerfile`, `ralph-start.sh`, `ralph-loop.sh`, etc.
+- `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
+- Docker/bash infrastructure — `Dockerfile`, `orca-start.sh`, `orca-loop.sh`, etc.
 - `BACKLOG.json` — Pre-PRD backlog: future improvements, unsolved problems, and working knowledge from real project use. Check before starting framework evolution work.
 
 ## Framework / Installed Boundary
 
-**Installed into target projects** (via `.ralph/`): `seed.md`, `perspectives/`, `ralph.md`, `processes/`, `templates/`
+**Installed into target projects** (via `.orca/`): `seed.md`, `perspectives/`, `orca.md`, `processes/`, `templates/`
 
-**Stays in ralph-docker only**: `docs/`, `CLAUDE.md`, `ralph-context/`, Docker/bash scripts
+**Stays in orca-docker only**: `docs/`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
 
 ## Essential Reading
 
@@ -49,14 +49,14 @@ From analysis of OMC, Superpowers, and Gas Town:
 - Always work on feature branches
 - Small, logical commits with clear messages
 
-## How to Run /ralph
+## How to Run /orca
 
 ```
-/ralph ralph-context/prds/001-foundation.json
+/orca orca-context/prds/001-foundation.json
 ```
 
-Ralph reads the PRD, dispatches subagents to work through task pipelines, and pushes when done.
+Orca reads the PRD, dispatches subagents to work through task pipelines, and pushes when done.
 
 ## Key Knowledge Files
 
-Knowledge files live in `ralph-context/knowledge/` (one file per learning, append-only). Currently empty — learnings from earlier PRDs are in their respective `ralph-context/tasks/` directories.
+Knowledge files live in `orca-context/knowledge/` (one file per learning, append-only). Currently empty — learnings from earlier PRDs are in their respective `orca-context/tasks/` directories.

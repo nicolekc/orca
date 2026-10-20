@@ -1,0 +1,31 @@
+{
+  "name": "Foundation",
+  "description": "Get the basics working: install the framework correctly and establish how to verify it. This must complete before anything else is trustworthy. Human checkpoint: Can I install the framework? Can I test things?",
+  "signoff": "full",
+  "tasks": [
+    {
+      "id": "001",
+      "description": "Establish testability foundations for the framework itself. The framework is unusual — it's prompt files, a skill, directory conventions, and an orchestrator. Standard testing approaches don't directly apply. The key mechanisms that need verification: orchestrator dispatch, role prompt behavior, build cycle flow (including termination), and self-installation correctness. The test infrastructure should be minimal but must actually verify behavior, not just structure.",
+      "outcome": "A verification approach exists for the framework's key mechanisms: orchestrator dispatch, role prompt behavior, build cycle flow, self-installation correctness",
+      "verification": "At least one automated check exists for each key mechanism. The approach is documented so future tasks know how to add tests.",
+      "dependencies": [],
+      "status": "pending"
+    },
+    {
+      "id": "002",
+      "description": "Update install.sh for the new framework structure. The script currently copies old-style files that no longer match the framework layout. After this task, install.sh creates the correct directory structure for any target project, including the self-install case (when the target is orca-docker itself). Backward compatibility with the old layout is NOT required. Valuable content in PRD_REFINE.md should not be lost during the transition.",
+      "outcome": "Running install.sh on a fresh project creates the full .orca/, orca-context/, .orca-tasks/ structure with all framework files and skills",
+      "verification": "Install into a temp directory. Verify all expected files exist. Verify .orca/ matches framework/ contents. Verify the self-install case works.",
+      "dependencies": [],
+      "status": "pending"
+    },
+    {
+      "id": "003",
+      "description": "Clean up legacy artifacts from pre-restructure. The repo has files from the old flat layout that no longer match the framework structure. Valuable content should be preserved in its correct framework location; everything else should be removed. No orphaned references to old-style paths or formats should remain.",
+      "outcome": "Legacy artifacts removed or migrated. No orphaned files from the old layout remain. Any valuable content preserved in its new framework-appropriate location.",
+      "verification": "Root templates/ directory removed (or emptied to .gitkeep if convention requires it). .claude/skills/refine/ updated to reference current PRD format. No file references old-style paths (ORCA_PROMPT.md, testsPassing, etc.).",
+      "dependencies": [],
+      "status": "pending"
+    }
+  ]
+}

@@ -38,11 +38,11 @@ Scratch holds handoff notes: what an agent picking this work up without your con
 
 ## Semantic Search
 
-`.ralph/tools/semantic-search/` — one tool for querying every resource category and scratch. Its README documents ingest and query.
+`.orca/tools/semantic-search/` — one tool for querying every resource category and scratch. Its README documents ingest and query.
 
 ## Perspectives
 
-`.ralph/perspectives/` describe how to think when doing a kind of work — posture, not process. Before doing work listed below, read the matching perspective; when dispatching a subagent for that work, name the file in its prompt. Ignore pipeline mechanics inside any perspective (splitting, spec handoffs, kickbacks) — those belong to the PRD process.
+`.orca/perspectives/` describe how to think when doing a kind of work — posture, not process. Before doing work listed below, read the matching perspective; when dispatching a subagent for that work, name the file in its prompt. Ignore pipeline mechanics inside any perspective (splitting, spec handoffs, kickbacks) — those belong to the PRD process.
 
 - **architect** — before shaping the system or making any major approach decision
 - **ux-designer** — when shaping or reviewing anything user-facing
@@ -55,8 +55,8 @@ Scratch holds handoff notes: what an agent picking this work up without your con
 
 One-shot lives beside the PRD process and never borrows from it:
 
-- No PRD files, tasks, pipelines, or statuses — `.ralph/processes/prd.md` and `build-cycle.md` do not apply
-- No ralph.md supervision mechanics — no one-agent-one-step invariant, no pipeline bookkeeping, no branch-per-PRD, no PR-as-dashboard
+- No PRD files, tasks, pipelines, or statuses — `.orca/processes/prd.md` and `build-cycle.md` do not apply
+- No orca.md supervision mechanics — no one-agent-one-step invariant, no pipeline bookkeeping, no branch-per-PRD, no PR-as-dashboard
 - No planner, spec-reviewer, or code-reviewer perspectives — those are pipeline roles
 - No signoff gates
 

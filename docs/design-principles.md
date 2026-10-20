@@ -72,7 +72,7 @@ Every framework file that an AI will read costs tokens and attention. Descriptio
 
 Use plain English. No invented terminology that users or AIs must learn. If a concept needs a name, use the most obvious word for what it is. Think Apple's naming: plain, obvious, no jargon.
 
-Exception: "Ralph" as a name for the orchestrator pattern is established and stays.
+Exception: "Orca" as a name for the orchestrator pattern is established and stays.
 
 ## P10: Model-Agnostic
 

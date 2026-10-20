@@ -20,7 +20,7 @@ A finished category is a directory a build agent can use without you:
 └── <ingester>           # whatever turns sources/ into the db — script, prompts, notes
 ```
 
-The ingester is the real work: a repeatable process that turns this category's raw format into chunk records and inserts them with the semantic-search tool. It lives in the category directory so that when the human adds more files later, re-running it is cheap (dedup makes re-runs safe). The tool itself — the chunk-record contract, commands, and adapter design guidance — is documented in `.ralph/tools/semantic-search/README.md`; read it in full before designing, and don't duplicate it here or in AGENTS.md.
+The ingester is the real work: a repeatable process that turns this category's raw format into chunk records and inserts them with the semantic-search tool. It lives in the category directory so that when the human adds more files later, re-running it is cheap (dedup makes re-runs safe). The tool itself — the chunk-record contract, commands, and adapter design guidance — is documented in `.orca/tools/semantic-search/README.md`; read it in full before designing, and don't duplicate it here or in AGENTS.md.
 
 ## What you need from the human
 

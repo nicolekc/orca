@@ -1,4 +1,4 @@
-# Ralph Progress Log
+# Orca Progress Log
 
 ---
 2026-01-22T20:50:00Z
@@ -27,12 +27,12 @@ Task: 002
 Status: done
 
 What I did:
-- Compared all 5 Ralph scripts (ralph-start.sh, ralph-clone.sh, ralph-once.sh, ralph-loop.sh, ralph-reset.sh) between README.md heredoc versions and actual files
+- Compared all 5 Orca scripts (orca-start.sh, orca-clone.sh, orca-once.sh, orca-loop.sh, orca-reset.sh) between README.md heredoc versions and actual files
 - Documented key differences found:
-  - ralph-start.sh: Actual uses named volumes (better), README used anonymous volumes
-  - ralph-once.sh: Actual is simplified (no logging), README had full logging - simplified is appropriate for quick testing
-  - ralph-clone.sh: Minor differences in volume mounts
-  - ralph-loop.sh and ralph-reset.sh: Nearly identical
+  - orca-start.sh: Actual uses named volumes (better), README used anonymous volumes
+  - orca-once.sh: Actual is simplified (no logging), README had full logging - simplified is appropriate for quick testing
+  - orca-clone.sh: Minor differences in volume mounts
+  - orca-loop.sh and orca-reset.sh: Nearly identical
 - Determined actual files are canonical (improved/updated versions)
 - Updated README.md Step 1.7 to remove embedded heredocs, now links to actual files with a table
 - Updated README.md Step 3.9 to reference actual files
@@ -52,7 +52,7 @@ What I did:
 - Added markdown links to all template and script files for easy navigation
 - Reduced README from ~1254 lines to ~965 lines (~290 lines removed)
 - Renumbered steps 3.5-3.12 to 3.5-3.13 for proper sequencing
-- Preserved only necessary heredocs: Dockerfile (users create in ralph-docker) and .gitignore append (small addition)
+- Preserved only necessary heredocs: Dockerfile (users create in orca-docker) and .gitignore append (small addition)
 - Verified all 14 linked files exist and paths work as relative links
 
 Files modified:
@@ -72,10 +72,10 @@ What I did:
 - Added "Repository Structure" section to README.md after the intro
 - Created visual directory tree showing all files and directories
 - Explained purpose of each file and directory:
-  - Root scripts (ralph-*.sh, Dockerfile) for machine-level setup
+  - Root scripts (orca-*.sh, Dockerfile) for machine-level setup
   - templates/ for files users copy to their projects
   - prds/ for PRD templates and tools
-  - ralph-logs/ for iteration logs (gitignored)
+  - orca-logs/ for iteration logs (gitignored)
 - Added "Key distinction" section explaining which files go where
 
 Files modified:
@@ -137,7 +137,7 @@ Files modified:
 - prds/999_dry_run_test.json: Reset all testsPassing flags from true to false
 
 Commit: 06331ae (included with other changes)
-Notes: Dry run PRD is now ready for new users to test their Ralph setup.
+Notes: Dry run PRD is now ready for new users to test their Orca setup.
 
 ---
 2026-01-23T00:05:00Z
@@ -155,7 +155,7 @@ Files modified:
 - README.md: Enhanced Key Files section and Step 3.10
 
 Commit: 06331ae (included with other changes)
-Notes: Users can now clearly understand: (1) which files go to ~/ralph-docker/ vs project root, (2) what the source of each file is, (3) which setup is one-time vs per-project.
+Notes: Users can now clearly understand: (1) which files go to ~/orca-docker/ vs project root, (2) what the source of each file is, (3) which setup is one-time vs per-project.
 
 ---
 2026-01-23T00:15:00Z
@@ -164,8 +164,8 @@ Task: 005
 Status: done
 
 What I did:
-- Added "Dry Run Test (No Git Commits)" section to Part 7: Running Ralph
-- Documented the command to run dry run: ./ralph-loop.sh prds/999_dry_run_test.json
+- Added "Dry Run Test (No Git Commits)" section to Part 7: Running Orca
+- Documented the command to run dry run: ./orca-loop.sh prds/999_dry_run_test.json
 - Explained what dry run does (edits only PRD file, no git commits)
 - Documented what success looks like (5 iterations, COMPLETE signal)
 - Added instructions for resetting the dry run PRD for reuse
@@ -174,7 +174,7 @@ Files modified:
 - README.md: Added dry run testing section after "Test with Single Iteration First"
 
 Commit: 06331ae (included with other changes)
-Notes: Users can now test their Ralph setup safely before running real tasks.
+Notes: Users can now test their Orca setup safely before running real tasks.
 
 ---
 2026-01-23T01:30:00Z
@@ -234,12 +234,12 @@ What I did:
 - Script copies all necessary files to target project:
   - CLAUDE.md.template → CLAUDE.md (only if doesn't exist)
   - progress.txt.template → progress.txt (only if doesn't exist)
-  - .claudeignore, RALPH_PROMPT.md, UI_TESTING.md
-  - ralph-loop.sh, ralph-once.sh (made executable)
+  - .claudeignore, ORCA_PROMPT.md, UI_TESTING.md
+  - orca-loop.sh, orca-once.sh (made executable)
   - prds/PRD_TEMPLATE.json, prds/PRD_REFINE.md
   - .claude/skills/discover/SKILL.md, .claude/skills/refine/SKILL.md
   - .git-hooks/pre-push (made executable, configured git hooks path)
-  - Updates .gitignore to exclude ralph-logs/
+  - Updates .gitignore to exclude orca-logs/
 - Script is idempotent: detects unchanged files, backs up changed files, creates only missing files
 - Script verifies target is a git repository
 - Dramatically simplified README Part 3 from 14 steps to 5 steps
@@ -254,7 +254,7 @@ Files modified:
 - README.md (simplified Part 3, updated Quick Reference)
 
 Commit: d1a533f
-Notes: Part 3 is now: clone Ralph → run install.sh → run /discover → commit. This unblocks other documentation tasks and makes onboarding much faster.
+Notes: Part 3 is now: clone Orca → run install.sh → run /discover → commit. This unblocks other documentation tasks and makes onboarding much faster.
 
 ---
 2026-01-23T04:00:00Z
@@ -281,7 +281,7 @@ Files modified:
 - README.md (restructured Parts 1, 4, 5, and Quick Reference)
 
 Commit: af8a74e
-Notes: Auth flow now correctly reflects per-container authentication happening inside the container after ralph-start.sh. No more false claims about auth being shared across containers.
+Notes: Auth flow now correctly reflects per-container authentication happening inside the container after orca-start.sh. No more false claims about auth being shared across containers.
 
 ---
 2026-01-23T05:00:00Z
@@ -290,17 +290,17 @@ Task: 005
 Status: done
 
 What I did:
-- Added "Why Ralph?" section after title, before Time Budget
+- Added "Why Orca?" section after title, before Time Budget
 - Explains 5 key benefits: Docker isolation, automated feedback loop, incremental commits, human oversight, GitHub protection
 - Moved "Key insight" content from Summary section to new section at top
 - Section is concise (~12 lines including the key insight paragraph)
 - Removed redundant "Key insight" line from Summary section
 
 Files modified:
-- README.md (added Why Ralph? section, removed duplicate Key insight)
+- README.md (added Why Orca? section, removed duplicate Key insight)
 
 Commit: 54abda7
-Notes: Benefits section provides clear value proposition before diving into setup instructions. New users now understand WHY to use Ralph before learning HOW.
+Notes: Benefits section provides clear value proposition before diving into setup instructions. New users now understand WHY to use Orca before learning HOW.
 
 ---
 2026-01-23T06:00:00Z
@@ -311,7 +311,7 @@ Status: done
 What I did:
 - Replaced verbose ASCII directory tree (26 lines, including code block) with markdown table
 - Table shows 12 key files/directories with concise purpose descriptions
-- Directory entries (templates/, prds/, .claude/skills/, ralph-logs/) explain what kinds of files they contain
+- Directory entries (templates/, prds/, .claude/skills/, orca-logs/) explain what kinds of files they contain
 - Condensed "Key distinction" section into simpler "Where things go" bullet points
 - Net reduction of 17 lines while improving scannability
 
@@ -332,7 +332,7 @@ What I did:
 - Verified README already documents natural language PRD creation workflow (Parts 4.4, 5.1)
 - Verified no references to new-prd.sh exist in README
 - Verified install.sh does not copy new-prd.sh (confirmed in Task 003)
-- Workflow is now: describe feature → Claude creates PRD → /refine → run Ralph
+- Workflow is now: describe feature → Claude creates PRD → /refine → run Orca
 
 Files modified:
 - prds/new-prd.sh (deleted)
@@ -347,10 +347,10 @@ Task: 010
 Status: done
 
 What I did:
-- Restructured Part 7 (Running Ralph) for logical flow: enter container → verify → dry run → real PRD
+- Restructured Part 7 (Running Orca) for logical flow: enter container → verify → dry run → real PRD
 - Moved "Dry Run Test" section BEFORE "Run a Real PRD" (was after)
 - Removed `tail -f progress.txt` from monitoring instructions (doesn't work well)
-- Removed vague "If something's wrong, fix your CLAUDE.md or RALPH_PROMPT.md and try again" advice
+- Removed vague "If something's wrong, fix your CLAUDE.md or ORCA_PROMPT.md and try again" advice
 - Added step numbers (7.1-7.7) for consistent structure
 - Simplified and clarified instructions throughout Part 7
 - Users will now test their setup with dry run before wasting a real PRD iteration
@@ -372,7 +372,7 @@ What I did:
 - Added commented example entry format to templates/progress.txt.template
 - Example shows all required fields: timestamp, PRD reference, task ID, status, "What I did" bullets, commit hash, notes
 - Used HTML comment to mark it as an example (delete after first real entry)
-- Format matches RALPH_PROMPT.md specification (lines 50-63)
+- Format matches ORCA_PROMPT.md specification (lines 50-63)
 
 Commit: cf24db7
 Notes: Example uses realistic content without being actual data. Users can now see exactly what progress entries should look like.
@@ -404,7 +404,7 @@ Task: 007
 Status: done
 
 What I did:
-- Added Table of Contents section after "Why Ralph?" section
+- Added Table of Contents section after "Why Orca?" section
 - Created markdown table with 9 Parts, descriptions, and time estimates
 - Each Part number links to its section via GitHub markdown anchors
 - Time estimates updated based on post-improvement workflow:
@@ -428,7 +428,7 @@ Status: done
 What I did:
 - Performed full coherency review of README and all related files
 - Verified all 9 Table of Contents anchor links work correctly
-- Verified all file links (Dockerfile, ralph-*.sh) point to existing files
+- Verified all file links (Dockerfile, orca-*.sh) point to existing files
 - Confirmed no references to deleted files (new-prd.sh) in active docs
 - Verified time estimates are reasonable for post-improvement workflow
 - Confirmed auth flow is correct (Steps in Part 4.2, inside container)
