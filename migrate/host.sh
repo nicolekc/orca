@@ -26,7 +26,7 @@ legacy_on() {
 list_legacy() {
     local c
     for c in $(docker ps -a --format '{{.Names}}'); do
-        docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/node/state"}}migrated{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{if .Name}}volume {{.Name}}{{else}}{{.Source}}{{end}}{{end}}{{end}}' "$c" \
+        docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/node/state"}}migrated{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$c" \
             | awk -F'|' -v n="$c" '$1 == "" { print "     " n "  →  " $2 }'
     done
 }
