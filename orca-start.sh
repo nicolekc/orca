@@ -40,6 +40,14 @@ if [ "$FRESH" = true ] && docker ps -a --format '{{.Names}}' | grep -q "^${CONTA
     docker rm -f "$CONTAINER_NAME"
 fi
 
+# Refuse if another container is running on this folder: both would edit the same files
+for c in $(docker ps --format '{{.Names}}'); do
+    if [ "$c" != "$CONTAINER_NAME" ] && [ "$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$c")" = "$PROJECT_PATH" ]; then
+        echo "❌ $c is already running on this folder; exit it first (or: docker stop $c)"
+        exit 1
+    fi
+done
+
 # Check if container already exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "📦 Resuming existing container..."
