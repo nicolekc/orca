@@ -9,18 +9,12 @@
 
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/migrate/host.sh"
+
 PROJECT_PATH=$(cd "${1:-.}" && pwd) || { echo "❌ Project path '${1:-.}' does not exist"; exit 1; }
 
-# Containers mounting <path> as /workspace: name|running|state (state empty = pre-migration)
-containers_on() {
-    local c
-    for c in $(docker ps -a --format '{{.Names}}'); do
-        docker inspect -f '{{.Name}}|{{.State.Running}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/home/node/state"}}state{{end}}{{end}}' "$c"
-    done | awk -F'|' -v p="$1" -v rp="$(cd "$1" && pwd -P)" '$3 == p || $3 == rp { sub(/^\//, "", $1); print $1 "|" $2 "|" $4 }'
-}
-
 ON_FOLDER=$(containers_on "$PROJECT_PATH")
-LEGACY=$(echo "$ON_FOLDER" | awk -F'|' '$1 != "" && $3 == "" { print $1 }')
+LEGACY=$(legacy_on "$PROJECT_PATH")
 RUNNING_NEW=$(echo "$ON_FOLDER" | awk -F'|' '$3 == "state" && $2 == "true" { print $1 }')
 
 if [ -z "$LEGACY" ]; then
