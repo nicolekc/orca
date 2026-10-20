@@ -22,6 +22,7 @@ Installed from the framework repo. Contains perspectives, processes, the seed, a
     planner.md
     qa-engineer.md
     spec-reviewer.md
+    ux-designer.md         # Routes user-facing work to the design skills
   processes/
     build-cycle.md
     prd.md                 # Pipeline model and task lifecycle
