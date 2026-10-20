@@ -12,6 +12,7 @@ Installed from the framework repo. Contains perspectives, processes, the seed, a
 .ralph/
   seed.md                  # Working style principles
   ralph.md                 # Orchestrator instructions
+  oneshot.md               # Goal-directed build mode, no PRD
   perspectives/
     architect.md
     code-cleaner.md
@@ -27,6 +28,8 @@ Installed from the framework repo. Contains perspectives, processes, the seed, a
     prd.md                 # Pipeline model and task lifecycle
   templates/
     prd.json               # PRD template
+  tools/
+    semantic-search/       # Local search over a project's resources and scratch
 ```
 
 ### `ralph-context/` — Project-Specific Files (your edits)
