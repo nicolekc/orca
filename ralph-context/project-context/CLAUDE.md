@@ -1,8 +1,8 @@
-# Ralph Refactor — Project Context
+# Ralph — Project Context
 
-Context for a large refactor of the Ralph framework (this repo). The code being refactored is the repo itself; this directory holds only context.
+Context for development work on the Ralph framework (this repo). The code lives in the repo itself; this directory holds only context — reference material, preferences, and handoff notes that carry across efforts.
 
-**What the refactor is:** _not yet written — the human will add it._
+**Current effort:** a large refactor — _description not yet written; the human will add it._
 
 ## What's here
 
