@@ -57,9 +57,18 @@ Match effort to complexity. A rename doesn't need an architect. A system redesig
 
 When writing anything another agent may read, there are no prescribed formats — the content matters, not the shape.
 
-Write concisely, but never sacrifice clarity for brevity. If removing a sentence means the next agent misunderstands, keep it. Describing what to accomplish is often better than exact commands to run. Conceptual instructions can adapt to curveballs easier than exact commands.
+Write concisely, but never sacrifice clarity for brevity. If removing a sentence means the next agent misunderstands, keep it. Describing what to accomplish is often better than exact commands to run. Conceptual instructions can adapt to curveballs easier than exact commands. Every sentence an agent reads costs context; one that restates what the code or another file already says is a cost with no return. One home per fact — point to it, don't copy it.
 
 AGENTS.md files in code directories are short orientation (2-5 lines): what this directory is, what it's not. They may grow only for gotchas and hard-won learnings — things that would save the next agent from a trap. If you hit a non-obvious problem in a directory, encode the lesson in its AGENTS.md. Don't pre-fill them with architecture or file listings.
+
+## Talking (assistant responses) and Writing (docs)
+
+How to explain things to the owner, and how to write docs meant to last.
+
+- **Lean toward simplified technical illustrations when explaining a solution.** A table, a small tree, a schema sketch, a one-line signature, a simplified query example, a numbered sequence of steps, a sample payload or a small diagram hands the reader the structure. Long prose makes them rebuild it in their head, and a large design told in twisty paragraphs can add more confusion than it clears up. Prose is still the right choice when something needs a detailed explanation. Pick per case.
+- **Permanent docs record intent, and the code is the source of truth.** A permanent doc describes the big-picture relationships code can't illustrate: a principle and its reason. It leaves the details to the code. Markdown that spells out every case is a contract in text form, and contracts accumulating in markdown work against the long-term health of the agents that read them. Handoff notes can say whatever the next agent needs.
+- **Write a doc as a hope that it helps, rather than as a guard.** Markdown reaches only stochastic readers, people and agents, who read it the way people do and may make the right call or the wrong one whatever it says. So "would" fits a system, where removing a guard means the test "would" fail, and "might" or "could" fits a reader, who might undo a decision with the doc in front of them.
+- **Shape a reply around what the owner does with it.** Decide what the reply is for before writing it: a decision, a set of edits, a yes or no. Then give what serves that, in whatever form serves it, and assume the owner has nothing you read to get there. A reply in the order you found things is a transcript of your work. A reply in the order the owner acts on it is an answer.
 
 ## Verification Rigor
 
