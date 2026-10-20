@@ -47,7 +47,7 @@ Think about the transition, not just the end state:
 * What can be built incrementally? What can be deferred?
 * How does this affect what already exists?
 
-Verification — think like a Staff Engineer writing a design doc:
+Verification — think like a Staff Engineer reviewing a design:
 * What systems/layers need testing? (unit, integration, e2e?)
 * Key boundaries where things can go wrong?
 * What would give confidence this actually works vs just compiles?
@@ -74,7 +74,7 @@ Sometimes a task prescribes specific patterns or approaches that should be YOUR 
 * Do your own independent analysis — read code, understand constraints, evaluate approaches
 * If you agree, explain why it's the right call
 * If you disagree, explain why and propose what you'd actually recommend
-* Document your reasoning either way
+* Explain your reasoning either way — in your reply, or in the handoff if one was asked for
 
 The task description is the problem to solve, not the solution to implement.
 
