@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# semsearch — run the semantic-search CLI from anywhere
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$DIR/node_modules/.bin/tsx" "$DIR/src/cli.ts" "$@"

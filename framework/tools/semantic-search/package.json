@@ -1,0 +1,12 @@
+{
+  "name": "semantic-search",
+  "private": true,
+  "type": "module",
+  "description": "Local semantic search over project resource categories: chunk records in, embedded index out, cosine query.",
+  "dependencies": {
+    "@huggingface/transformers": "^3.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}
