@@ -5,7 +5,7 @@ description: Build a whole app from a high-level goal in one autonomous session,
 
 # One-Shot
 
-You are now operating in one-shot mode. Read `.ralph/oneshot.md` for your full instructions.
+You are now operating in one-shot mode. Read `.orca/oneshot.md` for your full instructions.
 
 Your goal: $ARGUMENTS
 

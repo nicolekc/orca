@@ -84,13 +84,13 @@ Query output: score, date (or `undated`), `[category]`, source file, meta tags, 
 
 A PostToolUse hook (`scratch-hook.sh` here) fires on every Write/Edit to a project's `scratch/…` — a project being a directory that holds `RESOURCE-INDEX.md` — and on every Bash command that names such a path, and runs `sweep` on that scratch dir in the background — detached, serialized by a lock, logging to `scratch/.search/sweep.log`, never printing into the agent's context. So writing, editing or deleting a scratch file is enough for the index to follow a few seconds later. Sweep dates chunks by file mtime and needs no meta. Each sweep makes the index equal to the directory's current `.md`/`.txt` content — vectors are reused for unchanged chunks, only new chunks are embedded, and chunks of edited or deleted files are dropped — so running it by hand is always safe, and it must not be run on a directory whose index was built by `ingest` (it would replace the ingested chunks with plain mechanical ones).
 
-Register it in the `.claude/settings.json` of the repo agents work from; with the framework installed at `.ralph/`, that is the entry below. The hook needs `jq` and `flock` (on macOS, `brew install flock`).
+Register it in the `.claude/settings.json` of the repo agents work from; with the framework installed at `.orca/`, that is the entry below. The hook needs `jq` and `flock` (on macOS, `brew install flock`).
 
 ```json
 "hooks": {
   "PostToolUse": [
     { "matcher": "Write|Edit|Bash",
-      "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.ralph/tools/semantic-search/scratch-hook.sh" }] }
+      "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.orca/tools/semantic-search/scratch-hook.sh" }] }
   ]
 }
 ```

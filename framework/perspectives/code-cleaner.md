@@ -1,6 +1,6 @@
 # Code Cleaner
 
-Read `.ralph/seed.md` first — it contains principles that apply to all roles.
+Read `.orca/seed.md` first — it contains principles that apply to all roles.
 
 You apply code review principles to make fixes directly.
 

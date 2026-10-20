@@ -30,12 +30,12 @@
     {
       "id": "003",
       "name": "Create install script for project setup",
-      "description": "Create a script that automates the Part 3 project setup process. Users currently must copy many individual files—this should be a single command.\n\nThe script should:\n- Copy all required templates (CLAUDE.md.template→CLAUDE.md, RALPH_PROMPT.md, ralph-loop.sh, ralph-once.sh, progress.txt.template→progress.txt, .claudeignore)\n- Set up .git-hooks/pre-push and configure git to use it\n- Copy prds/ directory with PRD_TEMPLATE.json and PRD_REFINE.md\n- Copy UI_TESTING.md to templates reference location\n- Update .gitignore to exclude ralph-logs/\n- Copy .claude/skills/ directory with discover and refine skills\n- Work for both new projects and existing projects being 'activated' for Ralph\n\nConsider: Should this be a bash script (install.sh) that lives in the Ralph repo root, or a Claude Code skill, or both? A bash script is simpler and doesn't require Claude. The script should be idempotent (safe to run multiple times).\n\nRequires: 001, 002 (skills must exist before the script can copy them)",
+      "description": "Create a script that automates the Part 3 project setup process. Users currently must copy many individual files—this should be a single command.\n\nThe script should:\n- Copy all required templates (CLAUDE.md.template→CLAUDE.md, ORCA_PROMPT.md, orca-loop.sh, orca-once.sh, progress.txt.template→progress.txt, .claudeignore)\n- Set up .git-hooks/pre-push and configure git to use it\n- Copy prds/ directory with PRD_TEMPLATE.json and PRD_REFINE.md\n- Copy UI_TESTING.md to templates reference location\n- Update .gitignore to exclude orca-logs/\n- Copy .claude/skills/ directory with discover and refine skills\n- Work for both new projects and existing projects being 'activated' for Orca\n\nConsider: Should this be a bash script (install.sh) that lives in the Orca repo root, or a Claude Code skill, or both? A bash script is simpler and doesn't require Claude. The script should be idempotent (safe to run multiple times).\n\nRequires: 001, 002 (skills must exist before the script can copy them)",
       "acceptanceCriteria": [
         "install.sh exists in repo root with clear usage instructions",
         "Running the script from a target project copies all necessary files",
         "Script is idempotent (running twice doesn't break anything)",
-        "README Part 3 is dramatically simplified to: clone Ralph repo, run install script, run /discover",
+        "README Part 3 is dramatically simplified to: clone Orca repo, run install script, run /discover",
         "Script handles both 'fresh project' and 'existing project' scenarios"
       ],
       "testsPassing": true
@@ -57,9 +57,9 @@
     {
       "id": "005",
       "name": "Add repository benefits and purpose section",
-      "description": "Add a compelling section near the top of the README that explains WHY someone would use the Ralph technique. Currently the README jumps into setup without explaining the value proposition.\n\nKey points to cover:\n- Ralph is a technique/workflow, not a standalone app\n- Docker provides safety: isolated environment, can't accidentally damage host system, can't push to main without human approval\n- Automated feedback loop: Claude iterates until tests pass\n- Incremental progress: one task at a time, each committed, resumable\n- Human oversight: you review and approve PRs, not blind automation\n\nKeep it concise (not verbose). The current 'Key insight' at the end of the README captures some of this—consider moving/expanding that content to the top.\n\nPlace this section after the title but before the time budget or setup instructions.",
+      "description": "Add a compelling section near the top of the README that explains WHY someone would use the Orca technique. Currently the README jumps into setup without explaining the value proposition.\n\nKey points to cover:\n- Orca is a technique/workflow, not a standalone app\n- Docker provides safety: isolated environment, can't accidentally damage host system, can't push to main without human approval\n- Automated feedback loop: Claude iterates until tests pass\n- Incremental progress: one task at a time, each committed, resumable\n- Human oversight: you review and approve PRs, not blind automation\n\nKeep it concise (not verbose). The current 'Key insight' at the end of the README captures some of this—consider moving/expanding that content to the top.\n\nPlace this section after the title but before the time budget or setup instructions.",
       "acceptanceCriteria": [
-        "New section exists explaining Ralph's benefits and purpose",
+        "New section exists explaining Orca's benefits and purpose",
         "Section appears early in README (before setup instructions)",
         "Explains: Docker safety, automated testing loop, human oversight model",
         "Concise—not more than ~15-20 lines",
@@ -70,7 +70,7 @@
     {
       "id": "006",
       "name": "Replace ASCII directory tree with markdown table",
-      "description": "The current 'Repository Structure' section uses an ASCII tree showing every file. This is verbose and hard to maintain.\n\nReplace with a markdown table showing only the IMPORTANT files that users need to understand. Other files can be inferred from the directory descriptions.\n\nSuggested format:\n| File/Directory | Purpose |\n|----------------|----------|\n| Dockerfile | Docker image definition... |\n| ralph-start.sh | Launch container... |\n| templates/ | Files copied to your project |\n| prds/ | PRD templates and examples |\n| .claude/skills/ | Custom Claude Code skills |\n\nThe goal is clarity and scannability, not exhaustive listing. Users can explore the repo themselves for details.",
+      "description": "The current 'Repository Structure' section uses an ASCII tree showing every file. This is verbose and hard to maintain.\n\nReplace with a markdown table showing only the IMPORTANT files that users need to understand. Other files can be inferred from the directory descriptions.\n\nSuggested format:\n| File/Directory | Purpose |\n|----------------|----------|\n| Dockerfile | Docker image definition... |\n| orca-start.sh | Launch container... |\n| templates/ | Files copied to your project |\n| prds/ | PRD templates and examples |\n| .claude/skills/ | Custom Claude Code skills |\n\nThe goal is clarity and scannability, not exhaustive listing. Users can explore the repo themselves for details.",
       "acceptanceCriteria": [
         "ASCII tree is replaced with a markdown table",
         "Table shows ~8-12 key files/directories, not everything",
@@ -102,28 +102,28 @@
         "README documents natural language PRD creation workflow",
         "No remaining references to new-prd.sh in README",
         "Install script (task 003) does NOT copy new-prd.sh",
-        "Workflow is simpler: describe feature → Claude creates PRD → /refine → run Ralph"
+        "Workflow is simpler: describe feature → Claude creates PRD → /refine → run Orca"
       ],
       "testsPassing": true
     },
     {
       "id": "009",
       "name": "Enhance progress.txt template with section example",
-      "description": "The current progress.txt.template is minimal (just a header). Users and implementers don't know what a proper entry should look like.\n\nAdd an example section showing the expected format for Ralph's entries. This helps users understand what they'll see and helps Claude understand what format to use.\n\nExample content to add:\n```\n---\n[2026-01-23 14:30] PRD: 001_test_infrastructure.json\nTask: 001 - Fix existing test failures\nStatus: COMPLETE\nCommit: abc1234\nNotes: Fixed 3 failing tests in auth.test.ts related to mock setup.\n---\n```\n\nKeep the template realistic but clearly marked as an example.",
+      "description": "The current progress.txt.template is minimal (just a header). Users and implementers don't know what a proper entry should look like.\n\nAdd an example section showing the expected format for Orca's entries. This helps users understand what they'll see and helps Claude understand what format to use.\n\nExample content to add:\n```\n---\n[2026-01-23 14:30] PRD: 001_test_infrastructure.json\nTask: 001 - Fix existing test failures\nStatus: COMPLETE\nCommit: abc1234\nNotes: Fixed 3 failing tests in auth.test.ts related to mock setup.\n---\n```\n\nKeep the template realistic but clearly marked as an example.",
       "acceptanceCriteria": [
         "templates/progress.txt.template includes example section format",
         "Example shows: timestamp, PRD reference, task info, status, commit, notes",
         "Example is clearly marked as example/template (not real data)",
-        "Format matches what RALPH_PROMPT.md expects Claude to write"
+        "Format matches what ORCA_PROMPT.md expects Claude to write"
       ],
       "testsPassing": true
     },
     {
       "id": "010",
-      "name": "Fix Part 7 (Running Ralph) structure and remove broken instructions",
-      "description": "Part 7 has several issues:\n\n1. Dry run test should come BEFORE suggesting users run ralph-loop. Users should verify their setup works before running real iterations. Move the 'Dry Run Test' section earlier.\n\n2. 'Monitor by tailing progress.txt' (`tail -f progress.txt`) doesn't actually work well—remove this instruction.\n\n3. 'If something's wrong, fix your CLAUDE.md or RALPH_PROMPT.md and try again' is vague and unhelpful. Either clarify what kinds of issues are fixed where, or remove it.\n\nRestructure Part 7 flow:\n1. Enter container (ralph-start.sh or ralph-clone.sh)\n2. Verify setup (git status, npm test)\n3. Run dry run test FIRST (prds/999_dry_run_test.json)\n4. If dry run passes, run real PRD\n5. Monitor, stop, exit, resume instructions",
+      "name": "Fix Part 7 (Running Orca) structure and remove broken instructions",
+      "description": "Part 7 has several issues:\n\n1. Dry run test should come BEFORE suggesting users run orca-loop. Users should verify their setup works before running real iterations. Move the 'Dry Run Test' section earlier.\n\n2. 'Monitor by tailing progress.txt' (`tail -f progress.txt`) doesn't actually work well—remove this instruction.\n\n3. 'If something's wrong, fix your CLAUDE.md or ORCA_PROMPT.md and try again' is vague and unhelpful. Either clarify what kinds of issues are fixed where, or remove it.\n\nRestructure Part 7 flow:\n1. Enter container (orca-start.sh or orca-clone.sh)\n2. Verify setup (git status, npm test)\n3. Run dry run test FIRST (prds/999_dry_run_test.json)\n4. If dry run passes, run real PRD\n5. Monitor, stop, exit, resume instructions",
       "acceptanceCriteria": [
-        "Dry run section appears BEFORE ralph-loop instructions",
+        "Dry run section appears BEFORE orca-loop instructions",
         "No 'tail -f progress.txt' monitoring instruction",
         "'Fix your CLAUDE.md' advice is either clarified with specifics or removed",
         "Part 7 flow is logical: setup → verify → dry run → real run",

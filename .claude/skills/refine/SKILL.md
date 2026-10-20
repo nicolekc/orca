@@ -7,7 +7,7 @@ description: Review a PRD for task sizing, description quality, and acceptance c
 
 Review the PRD file provided as an argument.
 
-**Usage:** `/refine <prd-path>` (e.g., `/refine ralph-context/prds/003-make-it-real.json`)
+**Usage:** `/refine <prd-path>` (e.g., `/refine orca-context/prds/003-make-it-real.json`)
 
 ## How to Review
 

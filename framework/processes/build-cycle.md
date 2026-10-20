@@ -1,6 +1,6 @@
 # Build Cycle
 
-The standard process for completing a task. Used by Ralph when orchestrating, or by a human directing agents manually.
+The standard process for completing a task. Used by Orca when orchestrating, or by a human directing agents manually.
 
 ## The Cycle
 
@@ -30,7 +30,7 @@ Use judgment. The cycle is a default, not a mandate.
 
 ## Parallel Tasks
 
-If tasks are independent (no shared files, no dependency relationship), they can run through the cycle in parallel. Ralph dispatches separate subagent chains for each.
+If tasks are independent (no shared files, no dependency relationship), they can run through the cycle in parallel. Orca dispatches separate subagent chains for each.
 
 ## Redo
 
