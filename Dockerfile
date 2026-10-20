@@ -28,8 +28,9 @@ ARG USERNAME=node
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME
 
 # Create config directories for node user (gh, ssh need these)
-RUN mkdir -p /home/node/.config /home/node/.ssh /home/node/.local \
-    && chown -R node:node /home/node/.config /home/node/.ssh /home/node/.local \
+#   /home/node/state - Claude Code and gh state; the run scripts mount a volume here
+RUN mkdir -p /home/node/.config /home/node/.ssh /home/node/.local /home/node/state \
+    && chown -R node:node /home/node/.config /home/node/.ssh /home/node/.local /home/node/state \
     && chmod 700 /home/node/.ssh
 
 # Configure git for claude-bot commits (as root, applies globally)
@@ -44,6 +45,12 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Ensure claude is in PATH
 ENV PATH="/home/node/.local/bin:$PATH"
+
+# Keep logins, memory, sessions, plugins and settings in /home/node/state, which the
+# run scripts back with a per-project volume, so removing a container doesn't lose them.
+# Per project, not shared: Claude files memory by working dir, and every project is /workspace.
+ENV CLAUDE_CONFIG_DIR=/home/node/state/claude \
+    GH_CONFIG_DIR=/home/node/state/gh
 
 WORKDIR /workspace
 CMD ["bash"]

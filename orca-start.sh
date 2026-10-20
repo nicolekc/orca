@@ -52,14 +52,15 @@ else
         --cpus="4" \
         -v "$PROJECT_PATH:/workspace" \
         -v "${CONTAINER_NAME}_node_modules:/workspace/node_modules" \
+        -v "${CONTAINER_NAME}_state:/home/node/state" \
         orca-claude:latest \
         bash
     # Docker run options explained:
     #   --name              Container name (for resuming later)
     #   --memory, --cpus    Resource limits (adjust if needed)
     #   -v PROJECT:/workspace   Mount your project folder
+    #   -v ..._state:...    Claude/gh logins, memory, sessions (survive container removal)
     #   -v .gitconfig:...   Git config (read-only)
-    #   -v .config/claude:... Claude auth (so you don't re-login)
     #   -v .ssh:...         SSH keys for git push (read-only)
     #   -e GIT_AUTHOR_*     Commits show as "claude-bot" not you
 fi
