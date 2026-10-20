@@ -3,14 +3,13 @@
 # Usage: orca-reset.sh <container-name>
 # 
 # SAFE: This only removes the container, NOT your project files or Claude state:
-#   - orca-start.sh projects: Files are on your Mac (mounted)
-#   - orca-clone.sh projects: Files are in Docker volume (preserved)
+#   - Project files: on your Mac (mounted)
 #   - Claude/gh logins, memory, sessions: in the <container-name>_state volume (preserved)
 #
 # Containers created before the state volume existed keep that state inside the
 # container, so removing one loses it: run orca-migrate.sh on it first.
 #
-# To also delete the volumes (rare): docker volume rm orca-vol-<repo-name> <container-name>_state
+# To also delete the state (rare): docker volume rm <container-name>_state
 
 if [ -z "$1" ]; then
     echo "Usage: orca-reset.sh <container-name>"
@@ -43,7 +42,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     docker rm -f "$CONTAINER_NAME"
     echo "✅ Container removed"
-    echo "   Run orca-start.sh or orca-clone.sh to recreate"
+    echo "   Run orca-start.sh to recreate"
 else
     echo "Cancelled"
 fi
