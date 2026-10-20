@@ -2,9 +2,9 @@
 
 ## Problem Statement
 
-**Discovered:** During the founding design session, generalizable knowledge was captured in working notes. These are now distributed across task context folders. Some of this knowledge benefits EVERY user of orca-docker and belongs in the framework itself — but where exactly, and how much?
+**Discovered:** During the founding design session, generalizable knowledge was captured in working notes. These are now distributed across task context folders. Some of this knowledge benefits EVERY user of orca and belongs in the framework itself — but where exactly, and how much?
 
-**Why it matters:** A fresh project installing orca-docker gets framework/ (via .orca/) but NOT orca-context/. If success criteria guidance, problem statement structure, design philosophy, etc. only live in orca-context/, new projects don't benefit. But blindly copying everything into framework/ risks bloat and violating P8 (Lightning-Quick Descriptions).
+**Why it matters:** A fresh project installing orca gets framework/ (via .orca/) but NOT orca-context/. If success criteria guidance, problem statement structure, design philosophy, etc. only live in orca-context/, new projects don't benefit. But blindly copying everything into framework/ risks bloat and violating P8 (Lightning-Quick Descriptions).
 
 **What was tried:** The spec-reviewer role was already partially enhanced with success criteria quality checks and problem statement completeness. But the full knowledge hasn't been systematically mapped to framework locations.
 

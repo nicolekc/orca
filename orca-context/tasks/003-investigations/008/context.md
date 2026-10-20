@@ -15,7 +15,7 @@ The framework's directory names and concepts were named quickly during initial d
 | **overrides/roles/** | Actually fairly clear, but only in context of knowing what overrides/ means. |
 | **designs/** | Reasonably clear. Investigation outputs and design documents land here. |
 | **prds/** | Clear if you know the acronym. Might be opaque to someone new. |
-| The project name | Currently "orca-docker" because that's the test repo. Not relevant to the framework itself, but worth noting: the framework needs a name that isn't tied to a specific host project. |
+| The project name | Currently "orca" because that's the test repo. Not relevant to the framework itself, but worth noting: the framework needs a name that isn't tied to a specific host project. |
 | **.orca** vs **orca-context** | Should the framework root be a dotfile? Dotfiles signal "config/hidden." A visible directory signals "this is part of the project." Which is right? |
 | **.tasks** | Nicole mentioned this as another option for the tasks directory. Dotfile convention would hide it from casual `ls`. |
 

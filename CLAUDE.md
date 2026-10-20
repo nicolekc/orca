@@ -21,7 +21,7 @@ Read `.orca/seed.md` before starting any task.
 
 **Installed into target projects** (via `.orca/`): `seed.md`, `perspectives/`, `orca.md`, `processes/`, `templates/`
 
-**Stays in orca-docker only**: `docs/`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
+**Stays in the orca repo only**: `docs/`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
 
 ## Essential Reading
 

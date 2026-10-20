@@ -52,7 +52,7 @@ What I did:
 - Added markdown links to all template and script files for easy navigation
 - Reduced README from ~1254 lines to ~965 lines (~290 lines removed)
 - Renumbered steps 3.5-3.12 to 3.5-3.13 for proper sequencing
-- Preserved only necessary heredocs: Dockerfile (users create in orca-docker) and .gitignore append (small addition)
+- Preserved only necessary heredocs: Dockerfile (users create in orca) and .gitignore append (small addition)
 - Verified all 14 linked files exist and paths work as relative links
 
 Files modified:
@@ -155,7 +155,7 @@ Files modified:
 - README.md: Enhanced Key Files section and Step 3.10
 
 Commit: 06331ae (included with other changes)
-Notes: Users can now clearly understand: (1) which files go to ~/orca-docker/ vs project root, (2) what the source of each file is, (3) which setup is one-time vs per-project.
+Notes: Users can now clearly understand: (1) which files go to ~/orca/ vs project root, (2) what the source of each file is, (3) which setup is one-time vs per-project.
 
 ---
 2026-01-23T00:15:00Z

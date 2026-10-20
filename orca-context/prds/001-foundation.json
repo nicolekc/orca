@@ -13,7 +13,7 @@
     },
     {
       "id": "002",
-      "description": "Update install.sh for the new framework structure. The script currently copies old-style files that no longer match the framework layout. After this task, install.sh creates the correct directory structure for any target project, including the self-install case (when the target is orca-docker itself). Backward compatibility with the old layout is NOT required. Valuable content in PRD_REFINE.md should not be lost during the transition.",
+      "description": "Update install.sh for the new framework structure. The script currently copies old-style files that no longer match the framework layout. After this task, install.sh creates the correct directory structure for any target project, including the self-install case (when the target is orca itself). Backward compatibility with the old layout is NOT required. Valuable content in PRD_REFINE.md should not be lost during the transition.",
       "outcome": "Running install.sh on a fresh project creates the full .orca/, orca-context/, .orca-tasks/ structure with all framework files and skills",
       "verification": "Install into a temp directory. Verify all expected files exist. Verify .orca/ matches framework/ contents. Verify the self-install case works.",
       "dependencies": [],

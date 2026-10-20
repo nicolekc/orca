@@ -9,7 +9,7 @@ See [WHY.md](WHY.md) for the motivation and design philosophy.
 ### Install into your project
 
 ```bash
-git clone https://github.com/nicolekc/orca-docker.git ~/orca
+git clone https://github.com/nicolekc/orca.git ~/orca
 ~/orca/install.sh ~/projects/my-app
 ```
 

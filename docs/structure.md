@@ -120,7 +120,7 @@ The project's CLAUDE.md remains the primary project context file. The seed (`.or
 
 ## Self-Installation
 
-When the orca-docker repo installs into itself:
+When the orca repo installs into itself:
 - `framework/` is the **source** (canonical, edited by developers)
 - `.orca/` is the **installed copy** (generated, overwritten on install)
 - These are different directories — no conflict
