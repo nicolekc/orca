@@ -66,13 +66,13 @@ The problem with the current install.sh is not that it's a bash script. It's tha
 
 ## Self-Install Detection
 
-When the target directory IS the orca-docker repo (detected by checking for `framework/` directory in target), the installer should:
+When the target directory IS the orca repo (detected by checking for `framework/` directory in target), the installer should:
 - Still copy `framework/` -> `.orca/` (this is the sync mechanism)
 - Skip `orca-context/` scaffold (already exists)
 - Skip CLAUDE.md creation (already exists and is project-specific)
 - Still update skills, hooks, claudeignore, gitignore
 
-The simplest detection: if `$TARGET_DIR/framework/` exists AND `$TARGET_DIR/CLAUDE.md` already mentions "orca-docker" or "Orca Framework", treat it as self-install. But honestly, the existing idempotency logic (skip if present and unchanged, update if different) handles most of this naturally. The only special case is `orca-context/` -- which already has the "only create if absent" guard.
+The simplest detection: if `$TARGET_DIR/framework/` exists AND `$TARGET_DIR/CLAUDE.md` already mentions "orca" or "Orca Framework", treat it as self-install. But honestly, the existing idempotency logic (skip if present and unchanged, update if different) handles most of this naturally. The only special case is `orca-context/` -- which already has the "only create if absent" guard.
 
 Actually, on reflection: no special self-install logic needed. The "create only if absent" and "update if different" patterns handle every case. The self-install scenario just means more files get the "skipped (unchanged)" treatment. Keep it simple.
 
@@ -148,7 +148,7 @@ The same output works for agents. Plain text with clear structure is parseable b
 # (same command -- idempotent)
 ```
 
-The script lives at the root of orca-docker. Users clone orca-docker, then run install pointing at their project. Same as today.
+The script lives at the root of orca. Users clone orca, then run install pointing at their project. Same as today.
 
 ## Template for CLAUDE.md
 

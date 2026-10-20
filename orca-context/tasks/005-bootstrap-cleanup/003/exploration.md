@@ -4,7 +4,7 @@
 
 File: `/workspace/install.sh` (225 lines)
 
-The script takes a target project path as an argument and copies files from several locations in the orca-docker repo. It has basic idempotency (skips unchanged files, backs up changed ones) and prints a summary of what it did.
+The script takes a target project path as an argument and copies files from several locations in the orca repo. It has basic idempotency (skips unchanged files, backs up changed ones) and prints a summary of what it did.
 
 ### What it copies (10 steps):
 
@@ -81,10 +81,10 @@ The `.orca/` directory is correctly synced from `framework/` (minus the stale `r
 - `processes/` — build-cycle.md, prd.md
 - `templates/` — prd.json
 
-### Stays in orca-docker only:
+### Stays in orca only:
 - `docs/` — Framework design documentation
-- `CLAUDE.md` — The orca-docker project's own CLAUDE.md
-- `orca-context/` — Orca-docker's own project context
+- `CLAUDE.md` — The orca project's own CLAUDE.md
+- `orca-context/` — Orca's own project context
 - Docker/bash scripts — `Dockerfile`, `orca-start.sh`, `orca-loop.sh`, `orca-once.sh`, `orca-clone.sh`, `orca-reset.sh`
 - `install.sh` — The install script itself
 - `templates/` — Source templates for install (CLAUDE.md.template, etc.)

@@ -104,7 +104,7 @@ Structure the knowledge so any fresh CLI session can reconstruct our perspective
 
 The chain: CLAUDE.md → principles → knowledge → task context. A new session loads CLAUDE.md, sees it needs to understand verification philosophy, follows the reference, loads that, sees it references investigation notes about e2e approaches, loads those if relevant.
 
-For orca-docker specifically: capture what we've learned in this conversation into the right places in this tree. The conversation insights need to become loadable documents.
+For orca specifically: capture what we've learned in this conversation into the right places in this tree. The conversation insights need to become loadable documents.
 
 ### B6. Clarify the framework/ Boundary
 
@@ -112,7 +112,7 @@ State explicitly that `framework/` IS the separation line:
 
 **Installed into target projects**: `framework/seed.md`, `framework/perspectives/`, `framework/orca.md`, `framework/processes/`, `framework/templates/`
 
-**Stays in orca-docker**: `docs/`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
+**Stays in orca**: `docs/`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
 
 ---
 
