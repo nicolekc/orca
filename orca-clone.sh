@@ -44,7 +44,7 @@ else
         -e "GIT_COMMITTER_NAME=claude-bot" \
         -e "GIT_COMMITTER_EMAIL=claude-bot@users.noreply.github.com" \
         -e "REPO_URL=$REPO_URL" \
-        orca-claude:latest \
+        orca:latest \
         bash -c '
             if [ ! -d ".git" ]; then
                 echo "📥 Cloning repository..."

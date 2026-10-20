@@ -11,12 +11,12 @@
 #   2. Copies its state into the <new-container>_state volume (and, for orca-clone.sh
 #      containers, its cloned repo into orca-vol-<repo>)
 #   3. Re-reads the old container and checks every copied file against it
-# It never changes or removes the old container. Requires the orca-claude image
-# (docker build -t orca-claude .) and the old container stopped.
+# It never changes or removes the old container. Requires the orca image
+# (docker build -t orca .) and the old container stopped.
 
 set -euo pipefail
 
-IMAGE="orca-claude:latest"
+IMAGE="orca:latest"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HELPERS="$SCRIPT_DIR/migrate"
 
@@ -34,7 +34,7 @@ if [ -z "$OLD" ] || [ -z "$TARGET" ]; then
     exit 1
 fi
 
-docker image inspect "$IMAGE" >/dev/null 2>&1 || die "Build the image first: docker build -t orca-claude ."
+docker image inspect "$IMAGE" >/dev/null 2>&1 || die "Build the image first: docker build -t orca ."
 docker container inspect "$OLD" >/dev/null 2>&1 || die "No container named '$OLD'"
 [ "$(docker inspect -f '{{.State.Running}}' "$OLD")" = "false" ] || die "Stop '$OLD' first (exit it, or: docker stop $OLD)"
 

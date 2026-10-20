@@ -1,4 +1,4 @@
-# Shared by the orca-migrate.sh helpers, which run inside throwaway orca-claude containers.
+# Shared by the orca-migrate.sh helpers, which run inside throwaway orca containers.
 
 # The old container's state, as paths in its filesystem export (with and without ./,
 # whichever the export uses).

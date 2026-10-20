@@ -53,7 +53,7 @@ else
         -v "$PROJECT_PATH:/workspace" \
         -v "${CONTAINER_NAME}_node_modules:/workspace/node_modules" \
         -v "${CONTAINER_NAME}_state:/home/node/state" \
-        orca-claude:latest \
+        orca:latest \
         bash
     # Docker run options explained:
     #   --name              Container name (for resuming later)
