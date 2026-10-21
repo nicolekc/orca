@@ -57,6 +57,10 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/b
 # downloading it without asking (an agent can't answer the prompt).
 RUN corepack enable
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# `npm install -g` goes into ~/.local (bin on PATH): kept per project, no sudo. Without
+# this, global installs land in /usr/local inside the container and vanish when it's
+# recreated. (Set after the image's own installs, which belong in /usr/local.)
+ENV NPM_CONFIG_PREFIX=/home/node/.local
 
 # ── Agent CLIs ──────────────────────────────────────────────────────────────────────────
 # Claude Code: Anthropic's native installer (code.claude.com/docs/en/setup), which keeps

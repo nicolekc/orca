@@ -14,6 +14,10 @@ yarn --version
 python3 --version
 uv --version
 
+# npm install -g lands in the home, without sudo
+npm install -g --silent cowsay
+test -x "$HOME/.local/bin/cowsay"
+
 # Python: a project with its own .venv
 mkdir -p /tmp/py && cd /tmp/py
 uv init -q --name py
