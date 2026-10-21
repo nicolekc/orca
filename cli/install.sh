@@ -30,8 +30,10 @@ fi
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$RELEASE/$asset" -o "$tmp/orca"
+echo "Downloading orca for $os-$arch (about 70 MB; GitHub can take a minute)…"
+curl -fL --progress-bar "$RELEASE/$asset" -o "$tmp/orca"
 curl -fsSL "$RELEASE/$asset.sha256" -o "$tmp/orca.sha256"
+echo "Checking it against its published checksum…"
 
 expected=$(cut -d' ' -f1 "$tmp/orca.sha256")
 if command -v sha256sum >/dev/null; then actual=$(sha256sum "$tmp/orca" | cut -d' ' -f1)
@@ -43,5 +45,6 @@ fi
 
 chmod 755 "$tmp/orca"
 mv "$tmp/orca" "$dir/orca"
-echo "✓ Installed orca $("$dir/orca" --version) in $dir"
+echo "Installed in $dir. Running it once (macOS checks a new program first, which can take a moment)…"
+echo "✓ orca $("$dir/orca" --version)"
 echo "  Try: orca --help"
