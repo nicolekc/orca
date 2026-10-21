@@ -15,6 +15,7 @@ Read `.orca/seed.md` before starting any task.
 - `docs/` — Framework design documentation
 - `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
 - Docker/bash infrastructure — `Dockerfile`, `orca-start.sh`, `orca-loop.sh`, etc.
+- `orca-context/designs/open-questions.md` — Postponed design decisions (container setup, tools). Check before changing the related area.
 - `BACKLOG.json` — Pre-PRD backlog: future improvements, unsolved problems, and working knowledge from real project use. Check before starting framework evolution work.
 
 ## Framework / Installed Boundary
