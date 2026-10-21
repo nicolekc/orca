@@ -4,6 +4,7 @@
 set -euxo pipefail
 
 claude --version
+grep -q 'About this environment' /etc/claude-code/CLAUDE.md
 gh --version | head -1
 git config user.name
 gcc --version | head -1

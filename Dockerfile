@@ -64,6 +64,8 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 # the project's home (~/.local/bin, first on PATH), so a new container starts right away
 # with this copy, and each project then runs its own up-to-date one.
 RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
+# What every session should know about the container, read by Claude in every project
+COPY image/environment.md /etc/claude-code/CLAUDE.md
 
 # ── Installs inside containers ──────────────────────────────────────────────────────────
 # Every package manager installs tools into the project's home, with its commands on PATH:
