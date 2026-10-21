@@ -51,6 +51,10 @@ fi
 
 # Handle --fresh: remove existing container
 if [ "$FRESH" = true ] && docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME")" = true ]; then
+        echo "❌ $CONTAINER_NAME is running; exit every session in it first (or: docker stop $CONTAINER_NAME)"
+        exit 1
+    fi
     echo "🗑️  Removing existing container (--fresh)..."
     docker rm -f "$CONTAINER_NAME"
 fi
@@ -65,6 +69,17 @@ done
 
 # Check if container already exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    # A container keeps the image it was created from: say so when orca:latest is newer
+    USED=$(docker inspect -f '{{.Image}}' "$CONTAINER_NAME")
+    NEWEST=$(docker image inspect -f '{{.Id}}' orca:latest 2>/dev/null || true)
+    if [ -n "$NEWEST" ] && [ "$USED" != "$NEWEST" ]; then
+        built() { docker image inspect -f '{{.Created}}' "$1" 2>/dev/null | cut -c1-16 | tr T ' '; }
+        echo "⬆️  Image update available: this container's image was built $(built "$USED"), the newest $(built "$NEWEST")"
+        echo "   To switch, exit and run:  $0 --fresh \"$PROJECT_PATH\""
+        echo "   Kept: project files, home (logins, memory, sessions, settings, caches in ~), node_modules"
+        echo "   Lost: everything else in the container, e.g. packages installed with sudo apt or"
+        echo "         npm install -g, and files written outside /workspace and ~"
+    fi
     echo "📦 Resuming existing container..."
     docker start -ai "$CONTAINER_NAME"
 else
