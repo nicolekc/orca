@@ -1,7 +1,10 @@
 # Builds the orca image for Intel and Apple Silicon and publishes it as
-# ghcr.io/<owner>/orca:latest, which orca-update.sh pulls. Every build starts from scratch
-# on a fresh runner, so the weekly run picks up new tool versions even if nothing changed.
-# Pull requests only check that the image builds.
+# ghcr.io/<owner>/orca:latest, which orca-update.sh pulls.
+#
+# Builds reuse unchanged layers from a cache kept in the registry (:buildcache-<arch>), so a
+# rebuild yields the same layers and a pull downloads only what changed. The monthly run
+# (and a manual run with "fresh") rebuilds everything, picking up new tool versions.
+# Pull requests build and check the image without publishing it.
 name: Image
 
 on:
@@ -9,8 +12,13 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 1 * *'
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: Rebuild every layer, ignoring the cache
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,8 +33,10 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
+            arch: amd64
             runner: ubuntu-24.04
           - platform: linux/arm64
+            arch: arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
@@ -42,6 +52,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: ${{ matrix.platform }}
+          no-cache: ${{ github.event_name == 'schedule' || github.event.inputs.fresh == 'true' }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-${{ matrix.arch }}
+          # Only main updates the cache; pull requests read it
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}:buildcache-{1},mode=max', env.IMAGE, matrix.arch) || '' }}
           # Pull requests keep the image locally to check it; otherwise push each platform
           # by digest, and the publish job tags both as :latest together
           outputs: ${{ github.event_name == 'pull_request' && 'type=docker,name=orca-check' || format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE) }}
