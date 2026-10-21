@@ -43,7 +43,9 @@ RUN apt-get update && apt-get install -y curl ca-certificates \
 # System libraries Chromium needs, for Playwright and similar tools. They need root, so
 # they belong here. The browser itself doesn't: each Playwright version wants its own
 # build, and projects download it into ~/.cache/ms-playwright, kept across rebuilds.
-RUN npx -y playwright install-deps chromium && rm -rf /var/lib/apt/lists/*
+# npm's "before" cutoff: the newest Playwright published at least a week before the build.
+RUN npm_config_before="$(date -d '7 days ago' +%F)" npx -y playwright install-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Node package managers ───────────────────────────────────────────────────────────────
 # Corepack provides pnpm and yarn at the version each project's package.json asks for,

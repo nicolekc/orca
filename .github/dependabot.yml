@@ -1,0 +1,13 @@
+# Proposes updates to the commit-pinned actions in .github/workflows, at most one grouped
+# PR a month, and never for a release less than a week old.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
