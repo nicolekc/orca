@@ -60,6 +60,16 @@ test("an out-of-date container says what recreating keeps and loses, then resume
   expect(t.attached[1]).toEqual(["start", "-ai", "orca-app"]);
 });
 
+test("the update notice leaves out build dates that can't tell the images apart", async () => {
+  const t = fakeContext({ latest: "sha256:new", created: { "sha256:old": "2026-10-21T22:08:00Z", "sha256:new": "2026-10-21T22:08:30Z" } });
+  const dir = folder(t.home);
+  await start(t.ctx, dir, {});
+  t.state.containers.push({ name: "orca-app", image: "sha256:old", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  await start(t.ctx, dir, {});
+  expect(t.output()).toContain("made from an older orca image");
+  expect(t.output()).not.toContain("22:08");
+});
+
 test("--fresh recreates a stopped container", async () => {
   const t = fakeContext();
   const dir = folder(t.home);

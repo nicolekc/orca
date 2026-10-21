@@ -99,8 +99,15 @@ const isEmpty = (dir: string) => !existsSync(dir) || readdirSync(dir).length ===
 async function noticeOutdated(ctx: Context, used: string, folder: string) {
   const latest = await latestImage(ctx);
   if (!latest || latest.id === used) return;
-  const built = async (id: string) => ((await inspectImage(ctx, id))?.created ?? "?").slice(0, 16).replace("T", " ");
-  ctx.print(`Image update available: this container's image was built ${await built(used)}, the newest ${latest.created.slice(0, 16).replace("T", " ")}.`);
+  const when = (created: string | undefined) => created?.slice(0, 16).replace("T", " ");
+  const usedBuilt = when((await inspectImage(ctx, used))?.created);
+  const newestBuilt = when(latest.created);
+  // Dates only help when they tell the two images apart
+  ctx.print(
+    usedBuilt && newestBuilt && usedBuilt !== newestBuilt
+      ? `Image update available: this container's image was built ${usedBuilt}, the newest ${newestBuilt}.`
+      : "Image update available: this container was made from an older orca image.",
+  );
   ctx.print(`  To switch, exit and run:  orca start --fresh ${tilde(ctx, folder)}`);
   ctx.print(`  Kept:  the project folder, ~ (logins, memory, settings, installed tools), node_modules`);
   ctx.print(`  Reset: everything else in the container, such as system packages`);
