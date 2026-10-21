@@ -13,6 +13,8 @@ export type Context = {
   /** Asks a question on the terminal; null when there's no terminal to ask on. */
   ask: ((question: string) => Promise<string>) | null;
   color: boolean;
+  /** Starts a program on the Mac without waiting for it (e.g. a terminal window) */
+  launch: (argv: string[]) => Promise<void>;
 };
 
 export function realContext(): Context {
@@ -25,6 +27,10 @@ export function realContext(): Context {
     print: (line = "") => console.log(line),
     ask: interactive ? (q) => Promise.resolve(prompt(q) ?? "") : null,
     color: Boolean(process.stdout.isTTY) && !process.env.NO_COLOR,
+    launch: async (argv) => {
+      const proc = Bun.spawn(argv, { stdio: ["ignore", "ignore", "pipe"] });
+      if ((await proc.exited) !== 0) throw new OrcaError(`Couldn't open a terminal: ${(await new Response(proc.stderr).text()).trim()}`);
+    },
   };
 }
 

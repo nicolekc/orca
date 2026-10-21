@@ -68,6 +68,28 @@ step "list shows the forward"
 "$ORCA" list | tee out.txt
 grep -q "http://3000.demo.localhost:7320 → demo:3000" out.txt || fail "list should show the forward"
 
+step "the dashboard answers its own page and refuses everyone else"
+echo '{"terminal": ["true", "{command}"]}' > "$ORCA_DIR/config.json"
+"$ORCA" serve --no-open > serve.log 2>&1 &
+serve_pid=$!
+for _ in $(seq 40); do grep -q token= serve.log && break; sleep 0.25; done
+token=$(cat "$ORCA_DIR/serve-token")
+U=http://127.0.0.1:7321
+code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+[ "$(stat -c %a "$ORCA_DIR/serve-token")" = 600 ] || fail "the token file should be private"
+[ "$(code $U/api/projects)" = 401 ] || fail "no token should be refused"
+[ "$(code -b orca_token=$token -H 'Host: host.docker.internal:7321' $U/api/projects)" = 421 ] || fail "another Host should be refused"
+[ "$(code -b orca_token=$token -H 'content-type: application/json' -H 'x-orca: 1' -H 'Origin: https://evil.example' -X POST -d '{}' $U/api/projects/demo/open)" = 403 ] || fail "another Origin should be refused"
+curl -fs -b orca_token=$token $U/api/projects | grep -q '"name":"demo"' || fail "the API should list demo"
+curl -fs $U/app | grep -q '<div id="root">' || fail "the page should be served"
+# From a container: on Linux the Mac-only loopback isn't reachable at all; on a Mac it is, and the
+# token check refuses it (the 401 above). Either way, never a 200.
+from_container=$(docker run --rm --add-host=host.docker.internal:host-gateway orca:latest \
+  curl -s -o /dev/null -w '%{http_code}' -m 3 http://host.docker.internal:7321/api/projects || true)
+echo "   a container calling the dashboard got: $from_container"
+[ "$from_container" != 200 ] || fail "a container should not get the API"
+kill $serve_pid
+
 step "delete removes container and volume, keeps the home"
 "$ORCA" delete demo --yes
 docker inspect orca-demo >/dev/null 2>&1 && fail "container should be gone"

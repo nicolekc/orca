@@ -11,6 +11,7 @@ import { start } from "./commands/start";
 import { update, VERSION } from "./commands/update";
 import { OrcaError, realContext, type Context } from "./context";
 import { loadProjects } from "./projects";
+import { serve } from "./server/serve";
 import { projectAt } from "./proxy";
 import { Picker, type Choice } from "./ui/picker";
 
@@ -20,6 +21,9 @@ Usage:
   orca                      pick a project and start it (interactive)
   orca start [folder]       start or enter the container for a folder (default: this one)
       --fresh               recreate the container, e.g. on a newer image
+      -- <command>          run a command in it instead of a shell, e.g. -- claude --resume
+  orca serve                open the dashboard: every project, forward and session
+      --no-open             print its link instead of opening the browser
   orca new <name>           make a project, its code in ~/.orca/projects/<name>/workspace
   orca list [--json]        list projects and their state
   orca delete <project>     delete a project's container and node_modules
@@ -34,7 +38,11 @@ Usage:
 Your code is never deleted. Projects are in ~/.orca/projects; settings in
 ~/.orca/config.json (e.g. {"proxyPort": 7320}).`;
 
-async function main(argv: string[]): Promise<number> {
+async function main(all: string[]): Promise<number> {
+  // Everything after `--` is a command to run in the container: orca start . -- claude
+  const dd = all.indexOf("--");
+  const argv = dd < 0 ? all : all.slice(0, dd);
+  const inner = dd < 0 ? undefined : all.slice(dd + 1);
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -45,6 +53,7 @@ async function main(argv: string[]): Promise<number> {
       yes: { type: "boolean" },
       remove: { type: "string" },
       project: { type: "string" },
+      "no-open": { type: "boolean" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean" },
     },
@@ -68,7 +77,8 @@ async function main(argv: string[]): Promise<number> {
     case undefined:
       return pick(ctx);
     case "start":
-      return start(ctx, args[0] ?? ".", { fresh: values.fresh });
+      if (inner && inner.length === 0) throw new OrcaError("Nothing after --.", "orca start [folder] -- <command>");
+      return start(ctx, args[0] ?? ".", { fresh: values.fresh, command: inner });
     case "new":
       return create(ctx, one("name"));
     case "list":
@@ -87,6 +97,8 @@ async function main(argv: string[]): Promise<number> {
       if (args.length > 1) throw new OrcaError("orca forward takes one port.", "orca forward <port>");
       return forward(ctx, { project, add: port(args[0]), remove: port(values.remove) }).then(() => 0);
     }
+    case "serve":
+      return serve(ctx, { open: !values["no-open"] });
     case "update":
       await update(ctx, { self: { version: VERSION, execPath: process.execPath, fetch, platform: process.platform, arch: process.arch } });
       return 0;

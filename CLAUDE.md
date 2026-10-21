@@ -46,6 +46,10 @@ From analysis of OMC, Superpowers, and Gas Town:
 - **Custom vocabulary**: Invented terminology wastes tokens and confuses.
 - **Mandatory activation**: Let the AI decide what applies.
 
+## Container Trust Boundary
+
+Agents in project containers are treated as untrusted by the tooling on the Mac. Current guards, and why: containers see only their own home under `~/.orca` (so secrets there, like the dashboard token, stay out of reach); forwards are reachable from the Mac but not from other projects' containers; the `orca serve` dashboard listens on loopback and requires its token, with cross-site and DNS-rebinding checks, because containers and web pages can both reach the Mac's loopback. Change these when there's reason to, keeping the boundary in mind.
+
 ## Git Rules
 
 - NEVER push to main directly
