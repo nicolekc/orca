@@ -7,7 +7,7 @@ Context for development work on the Orca framework (this repo). The code lives i
 ## What's here
 
 - `RESOURCE-INDEX.md` — searchable resource categories and how to use each
-- `user-preferences/` — standing requirements; read in full (empty for now)
+- `user-preferences/` — standing requirements; read in full
 - `scratch/` — handoff notes for work in flight; date them, delete once picked up
 
 See `.orca/oneshot.md` for how this directory is used, and `.orca/tools/semantic-search/README.md` for querying it.

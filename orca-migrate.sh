@@ -9,7 +9,7 @@
 # logins, memory, sessions, plugins, settings, git config) inside the container, where
 # removing it loses them. This script:
 #   1. Backs up the whole old container as an image (orca-backup/<old>:pre-migration)
-#   2. Copies its home into ~/.orca/projects/<project>/home, which orca-start.sh mounts as ~
+#   2. Copies its home into ~/.orca/projects/<project>/home, which `orca start` mounts as ~
 #      (minus the old Claude program and caches)
 #   3. Re-reads the old container and checks every copied file against it
 # It never changes or removes the old container. Requires the orca image
@@ -53,7 +53,7 @@ if [ "$(echo "$OLD" | grep -c . || true)" -ne 1 ]; then
 fi
 [ "$(docker inspect -f '{{.State.Running}}' "$OLD")" = "false" ] || die "Stop '$OLD' first (exit it, or: docker stop $OLD)"
 
-# Name the new container exactly as orca-start.sh will
+# Name the new container exactly as `orca start` will
 FOLDER_NAME=$(basename "$PROJECT_PATH")
 if [ -z "$FOLDER_NAME" ] || [ "$FOLDER_NAME" = "/" ]; then
     FOLDER_NAME="project"
@@ -99,7 +99,7 @@ else
 fi
 echo ""
 echo "Next (don't run $OLD and $NEW at the same time — they share the project):"
-echo "  1. Start the new container:  cd $PROJECT_PATH && $SCRIPT_DIR/orca-start.sh ."
+echo "  1. Start the new container:  orca start $PROJECT_PATH"
 echo "  2. Inside it, check: claude starts logged in; /memory; claude --resume; gh auth status"
 echo "     node_modules starts empty (it's per container): run npm install if the project uses it"
 echo "  3. When satisfied:  docker rm $OLD"

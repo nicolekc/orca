@@ -1,5 +1,5 @@
 # Builds the orca image for Intel and Apple Silicon and publishes it as
-# ghcr.io/<owner>/orca:latest, which orca-update.sh pulls.
+# ghcr.io/<owner>/orca:latest, which `orca update` pulls.
 #
 # Builds reuse unchanged layers from a cache kept in the registry (:buildcache-<arch>), so a
 # rebuild yields the same layers and a pull downloads only what changed. The monthly run

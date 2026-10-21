@@ -1,0 +1,127 @@
+#!/usr/bin/env bun
+import { existsSync } from "node:fs";
+import { parseArgs } from "node:util";
+import { render } from "ink";
+import { createElement } from "react";
+import { del } from "./commands/delete";
+import { list } from "./commands/list";
+import { create } from "./commands/new";
+import { start } from "./commands/start";
+import { update, VERSION } from "./commands/update";
+import { OrcaError, realContext, type Context } from "./context";
+import { loadProjects } from "./projects";
+import { Picker, type Choice } from "./ui/picker";
+
+const HELP = `orca: each project in its own container, with its own home
+
+Usage:
+  orca                      pick a project and start it (interactive)
+  orca start [folder]       start or enter the container for a folder (default: this one)
+      --fresh               recreate the container, e.g. on a newer image
+  orca new <name>           make a project, its code in ~/.orca/projects/<name>/workspace
+  orca list [--json]        list projects and their state
+  orca delete <project>     delete a project's container and node_modules
+      --home                also delete its home (logins, memory, settings)
+      --yes                 don't ask to confirm
+  orca update               get the newest image, and the newest orca
+
+Your code is never deleted. Projects are in ~/.orca/projects.`;
+
+async function main(argv: string[]): Promise<number> {
+  const { values, positionals } = parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: {
+      fresh: { type: "boolean" },
+      json: { type: "boolean" },
+      home: { type: "boolean" },
+      yes: { type: "boolean" },
+      help: { type: "boolean", short: "h" },
+      version: { type: "boolean" },
+    },
+  });
+  if (values.help) return say(HELP);
+  if (values.version) return say(VERSION);
+
+  if (existsSync("/.dockerenv") || existsSync("/run/.containerenv")) {
+    if (!process.env.ORCA_ALLOW_IN_CONTAINER)
+      throw new OrcaError("orca manages containers from your Mac, and this is a container.", "Run it in a terminal on the Mac.");
+  }
+
+  const ctx = realContext();
+  const [command, ...args] = positionals;
+  const one = (what: string) => {
+    if (args.length !== 1) throw new OrcaError(`orca ${command} takes one ${what}.`, `orca ${command} <${what}>`);
+    return args[0];
+  };
+
+  switch (command) {
+    case undefined:
+      return pick(ctx);
+    case "start":
+      return start(ctx, args[0] ?? ".", { fresh: values.fresh });
+    case "new":
+      return create(ctx, one("name"));
+    case "list":
+    case "ls":
+      return list(ctx, { json: values.json }).then(() => 0);
+    case "delete":
+    case "rm":
+      return del(ctx, one("project"), { home: values.home, yes: values.yes }).then(() => 0);
+    case "update":
+      await update(ctx, { self: { version: VERSION, execPath: process.execPath, fetch, platform: process.platform, arch: process.arch } });
+      return 0;
+    default:
+      throw new OrcaError(`There's no command "${command}".`, "See: orca --help");
+  }
+}
+
+/** The picker; without a terminal, the plain list instead. */
+async function pick(ctx: Context): Promise<number> {
+  const projects = await loadProjects(ctx);
+  if (!ctx.ask) return list(ctx, {}).then(() => 0);
+  let choice = { action: "quit" } as Choice;
+  const app = render(createElement(Picker, { projects, home: ctx.home, onChoose: (c: Choice) => (choice = c) }));
+  await app.waitUntilExit();
+
+  switch (choice.action) {
+    case "start": {
+      const name = choice.project;
+      const p = projects.find((x) => x.name === name)!;
+      const folder = p.folder ?? p.legacy?.workspace;
+      if (!folder) throw new OrcaError(`${p.name} has no project folder on record.`);
+      return start(ctx, folder, {});
+    }
+    case "new": {
+      const name = (await ctx.ask("Name for the new project: ")).trim();
+      return name ? create(ctx, name) : 0;
+    }
+    case "delete":
+      await del(ctx, choice.project, {});
+      return 0;
+    case "quit":
+      return 0;
+  }
+}
+
+function say(text: string) {
+  console.log(text);
+  return 0;
+}
+
+main(process.argv.slice(2)).then(
+  (code) => process.exit(code),
+  (err) => {
+    const red = process.stderr.isTTY && !process.env.NO_COLOR ? (s: string) => `\x1b[31m${s}\x1b[0m` : (s: string) => s;
+    if (err instanceof OrcaError) {
+      console.error(red(`✗ ${err.message}`));
+      if (err.fix) console.error(`  ${err.fix}`);
+    } else if (err?.code?.startsWith?.("ERR_PARSE_ARGS")) {
+      console.error(red(`✗ ${err.message}`));
+      console.error("  See: orca --help");
+    } else {
+      console.error(red(`✗ ${err?.stack ?? err}`));
+    }
+    process.exit(1);
+  },
+);

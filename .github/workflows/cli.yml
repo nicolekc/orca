@@ -1,0 +1,54 @@
+# The orca command (cli/): tests on every pull request and push; an end-to-end run against
+# real Docker; and on main, builds for every platform published to the rolling "cli"
+# release, which cli/install.sh and `orca update` download from.
+name: CLI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only unless a job says otherwise
+permissions:
+  contents: read
+
+env:
+  BUN_VERSION: 1.4.3
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: npm install -g "bun@$BUN_VERSION"
+      - run: make install check
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: npm install -g "bun@$BUN_VERSION"
+      - run: make install build
+      - name: Get the published image
+        run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest
+      - run: bash cli/test/e2e.sh dist/orca-linux-x64
+
+  release:
+    if: github.event_name == 'push'
+    needs: [test, e2e]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # replacing the release's files
+    concurrency: cli-release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: npm install -g "bun@$BUN_VERSION"
+      - run: make install dist
+      - name: Publish to the cli release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view cli >/dev/null 2>&1 || gh release create cli --target "$GITHUB_SHA" --latest=false \
+            --title "orca command" --notes "Builds of the orca command from main, replaced on every push. \`version\` names the commit. Install: cli/install.sh"
+          gh release upload cli dist/orca-* dist/version --clobber
