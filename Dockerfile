@@ -31,22 +31,16 @@ RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME
 RUN git config --global user.name "claude-bot" \
     && git config --global user.email "claude-bot@users.noreply.github.com"
 
-# Agent CLIs install system-wide, never into ~: orca-start.sh mounts each project's own
-# home folder over /home/node, so everything in ~ is that project's data (logins, memory,
-# sessions, settings) and survives the container. Update them by rebuilding the image.
+# Agent CLIs install outside ~: orca-start.sh mounts each project's own home folder over
+# /home/node, hiding anything the image puts there. Everything in ~ is that project's data
+# (logins, memory, sessions, settings) and survives the container.
 #
-# Claude Code: Anthropic's apt package (code.claude.com/docs/en/setup, Linux package
-# managers), the documented system-wide install; it doesn't update itself. The build
-# fails unless the signing key has Anthropic's published fingerprint.
-RUN apt-get update && apt-get install -y gnupg \
-    && install -d -m 0755 /etc/apt/keyrings \
-    && curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o /etc/apt/keyrings/claude-code.asc \
-    && gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc \
-       | grep -q '^fpr:.*:31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE:' \
-    && echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/stable stable main" \
-       > /etc/apt/sources.list.d/claude-code.list \
-    && apt-get update && apt-get install -y claude-code \
-    && rm -rf /var/lib/apt/lists/*
+# Claude Code: Anthropic's native installer (code.claude.com/docs/en/setup), which keeps
+# Claude updated. It installs into $HOME, so it runs with HOME=/opt/claude. Updates land in
+# the project's home (~/.local/bin, first on PATH), so a new container starts right away
+# with this copy, and each project then runs its own up-to-date one.
+RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
+ENV PATH="/home/node/.local/bin:/opt/claude/.local/bin:$PATH"
 
 USER $USERNAME
 
