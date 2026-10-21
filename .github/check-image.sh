@@ -7,6 +7,7 @@ claude --version
 gh --version | head -1
 git config user.name
 gcc --version | head -1
+ffmpeg -version | head -1
 node --version
 pnpm --version
 yarn --version

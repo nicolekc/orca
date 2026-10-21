@@ -23,6 +23,8 @@ ARG PYTHON_VERSION=3.14
 #   jq, tree             JSON in scripts, directory views
 #   curl                 downloads (also used by the installers below)
 #   build-essential      C compiler and make: native npm and pip packages compile on install
+#   ffmpeg               video and audio: trimming, converting and joining recordings (e.g.
+#                        PR evidence); Playwright's own ffmpeg only records WebM
 #   unzip, zip           archives
 #   procps, less         ps/top, a pager
 RUN apt-get update && apt-get install -y curl ca-certificates \
@@ -32,7 +34,7 @@ RUN apt-get update && apt-get install -y curl ca-certificates \
        > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update && apt-get install -y \
        git openssh-client gh sudo ripgrep fd-find jq tree \
-       build-essential unzip zip procps less \
+       build-essential ffmpeg unzip zip procps less \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Browser libraries ───────────────────────────────────────────────────────────────────
