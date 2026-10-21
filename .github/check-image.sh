@@ -14,9 +14,12 @@ yarn --version
 python3 --version
 uv --version
 
-# npm install -g lands in the home, without sudo
-npm install -g --silent cowsay
-test -x "$HOME/.local/bin/cowsay"
+# Each package manager's installs land in the home, without sudo, with commands on PATH
+npm install -g --silent cowsay && test "$(command -v cowsay)" = "$HOME/.local/bin/cowsay"
+yarn global add --silent yosay && test "$(command -v yosay)" = "$HOME/.local/bin/yosay"
+pnpm add -g http-server && test "$(command -v http-server)" = "$HOME/.local/share/pnpm/bin/http-server"
+uv tool install -q pycowsay && test "$(command -v pycowsay)" = "$HOME/.local/bin/pycowsay"
+python3 -m pip install -q six && python3 -c 'import six, os; assert six.__file__.startswith(os.path.expanduser("~/.local/"))'
 
 # Python: a project with its own .venv
 mkdir -p /tmp/py && cd /tmp/py

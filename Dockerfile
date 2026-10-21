@@ -57,10 +57,6 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/b
 # downloading it without asking (an agent can't answer the prompt).
 RUN corepack enable
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-# `npm install -g` goes into ~/.local (bin on PATH): kept per project, no sudo. Without
-# this, global installs land in /usr/local inside the container and vanish when it's
-# recreated. (Set after the image's own installs, which belong in /usr/local.)
-ENV NPM_CONFIG_PREFIX=/home/node/.local
 
 # ── Agent CLIs ──────────────────────────────────────────────────────────────────────────
 # Claude Code: Anthropic's native installer (code.claude.com/docs/en/setup), which keeps
@@ -68,7 +64,25 @@ ENV NPM_CONFIG_PREFIX=/home/node/.local
 # the project's home (~/.local/bin, first on PATH), so a new container starts right away
 # with this copy, and each project then runs its own up-to-date one.
 RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
-ENV PATH="/home/node/.local/bin:/opt/claude/.local/bin:$PATH"
+
+# ── Installs inside containers ──────────────────────────────────────────────────────────
+# Every package manager installs tools into the project's home, with its commands on PATH:
+# no sudo, and kept when the container is recreated. (Set after the image's own installs.)
+#   npm install -g       ~/.local          (NPM_CONFIG_PREFIX; npm's default is /usr/local)
+#   yarn global add      ~/.local          (follows npm's prefix)
+#   pnpm add -g          ~/.local/share/pnpm  (PNPM_HOME; pnpm refuses without it)
+#   uv tool install      ~/.local          (uv's default)
+#   pip install          ~/.local          (PIP_BREAK_SYSTEM_PACKAGES lets pip fall back to
+#                                          the home; the image's Python is root-owned, so
+#                                          it can't be changed. Inside a .venv, as usual.)
+#   claude updates       ~/.local          (Claude's default; see Agent CLIs)
+#   gh extension install ~/.local/share/gh (gh's default)
+# Caches (npm, uv, corepack, Playwright browsers) are in ~/.cache by default.
+# Only system packages (sudo apt install) stay in the container; add lasting ones above.
+ENV NPM_CONFIG_PREFIX=/home/node/.local \
+    PNPM_HOME=/home/node/.local/share/pnpm \
+    PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/claude/.local/bin:$PATH"
 
 # ── Container user ──────────────────────────────────────────────────────────────────────
 ARG USERNAME=node

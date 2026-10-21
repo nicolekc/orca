@@ -78,7 +78,7 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         echo "   To switch, exit and run:  $0 --fresh \"$PROJECT_PATH\""
         echo "   Kept: project files, home (logins, memory, sessions, settings, caches in ~), node_modules"
         echo "   Lost: everything else in the container, e.g. packages installed with sudo apt, and"
-        echo "         files written outside /workspace and ~ (npm install -g goes into ~, so it stays)"
+        echo "         files written outside /workspace and ~ (npm/pnpm/yarn/pip/uv installs go into ~, so they stay)"
     fi
     echo "📦 Resuming existing container..."
     docker start -ai "$CONTAINER_NAME"
