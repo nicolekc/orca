@@ -4,12 +4,14 @@ import { parseArgs } from "node:util";
 import { render } from "ink";
 import { createElement } from "react";
 import { del } from "./commands/delete";
+import { forward } from "./commands/forward";
 import { list } from "./commands/list";
 import { create } from "./commands/new";
 import { start } from "./commands/start";
 import { update, VERSION } from "./commands/update";
 import { OrcaError, realContext, type Context } from "./context";
 import { loadProjects } from "./projects";
+import { projectAt } from "./proxy";
 import { Picker, type Choice } from "./ui/picker";
 
 const HELP = `orca: each project in its own container, with its own home
@@ -23,9 +25,14 @@ Usage:
   orca delete <project>     delete a project's container and node_modules
       --home                also delete its home (logins, memory, settings)
       --yes                 don't ask to confirm
+  orca forward [port]       make a port in this project's container reachable from the Mac,
+                            at http://<port>.<project>.localhost:7320 (no port: list them)
+      --remove <port>       stop forwarding a port
+      --project <name>      a project other than the one for this folder
   orca update               get the newest image, and the newest orca
 
-Your code is never deleted. Projects are in ~/.orca/projects.`;
+Your code is never deleted. Projects are in ~/.orca/projects; settings in
+~/.orca/config.json (e.g. {"proxyPort": 7320}).`;
 
 async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
@@ -36,6 +43,8 @@ async function main(argv: string[]): Promise<number> {
       json: { type: "boolean" },
       home: { type: "boolean" },
       yes: { type: "boolean" },
+      remove: { type: "string" },
+      project: { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean" },
     },
@@ -68,6 +77,16 @@ async function main(argv: string[]): Promise<number> {
     case "delete":
     case "rm":
       return del(ctx, one("project"), { home: values.home, yes: values.yes }).then(() => 0);
+    case "forward": {
+      const project = values.project ?? projectAt(ctx, process.cwd());
+      if (!project) throw new OrcaError("This folder isn't in a project.", "Run it from a project folder, or pass --project <name>");
+      const port = (s: string | undefined) => {
+        if (s !== undefined && !/^\d+$/.test(s)) throw new OrcaError(`"${s}" isn't a port: use a number from 1 to 65535.`);
+        return s === undefined ? undefined : Number(s);
+      };
+      if (args.length > 1) throw new OrcaError("orca forward takes one port.", "orca forward <port>");
+      return forward(ctx, { project, add: port(args[0]), remove: port(values.remove) }).then(() => 0);
+    }
     case "update":
       await update(ctx, { self: { version: VERSION, execPath: process.execPath, fetch, platform: process.platform, arch: process.arch } });
       return 0;

@@ -19,6 +19,7 @@ export type Container = {
   labels: Record<string, string>;
   workspace: string | null; // host folder mounted at /workspace
   home: string | null; // host folder mounted at /home/node
+  networks: string[];
 };
 
 export const realDocker: Docker = {
@@ -47,6 +48,7 @@ type Inspected = {
   Image: string;
   Config: { Labels: Record<string, string> | null };
   Mounts: { Source: string; Destination: string }[];
+  NetworkSettings?: { Networks?: Record<string, unknown> | null };
 };
 
 export function parseContainer(c: Inspected): Container {
@@ -60,5 +62,6 @@ export function parseContainer(c: Inspected): Container {
     labels: c.Config.Labels ?? {},
     workspace: mount("/workspace"),
     home: mount("/home/node"),
+    networks: Object.keys(c.NetworkSettings?.Networks ?? {}),
   };
 }

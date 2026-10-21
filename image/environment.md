@@ -7,4 +7,5 @@ volume-mounted from the host, which may have the same files open under a differe
   container-only volume) and `~`.
 - Reset: everything outside `/workspace` and `~`, such as system packages.
 - No display; browsers run headless.
-- No ports are published to the host.
+- Ports reach the host only when the user forwards one (`orca forward <port>`, on the host),
+  and only for servers listening on `0.0.0.0` rather than `localhost`.
