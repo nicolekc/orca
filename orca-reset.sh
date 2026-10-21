@@ -4,7 +4,7 @@
 # 
 # SAFE: This only removes the container, NOT your project files or its home:
 #   - Project files: on your Mac (mounted)
-#   - Home (logins, memory, sessions, settings): ~/.orca/<project>/home on your Mac
+#   - Home (logins, memory, sessions, settings): ~/.orca/projects/<project>/home on your Mac
 #
 # Containers created before project home folders existed keep their home inside the
 # container, so removing one loses it: run orca-migrate.sh on it first.

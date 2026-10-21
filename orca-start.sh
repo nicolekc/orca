@@ -32,7 +32,7 @@ fi
 CONTAINER_NAME="${2:-orca-$FOLDER_NAME}"
 
 # The project's home folder (~ in the container): its logins, memory, sessions, settings
-PROJECT_DIR="$HOME/.orca/$FOLDER_NAME"
+PROJECT_DIR="$HOME/.orca/projects/$FOLDER_NAME"
 HOME_DIR="$PROJECT_DIR/home"
 
 echo "🚀 Orca Container: $CONTAINER_NAME"
@@ -82,7 +82,7 @@ else
     #   --name              Container name (for resuming later)
     #   --memory, --cpus    Resource limits (adjust if needed)
     #   -v PROJECT:/workspace   Mount your project folder
-    #   -v HOME:/home/node  The project's home (~/.orca/<project>/home): survives container removal
+    #   -v HOME:/home/node  The project's home (~/.orca/projects/<project>/home): survives container removal
     #   -v .gitconfig:...   Git config (read-only)
     #   -v .ssh:...         SSH keys for git push (read-only)
     #   -e GIT_AUTHOR_*     Commits show as "claude-bot" not you

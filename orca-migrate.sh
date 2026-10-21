@@ -9,7 +9,7 @@
 # logins, memory, sessions, plugins, settings, git config) inside the container, where
 # removing it loses them. This script:
 #   1. Backs up the whole old container as an image (orca-backup/<old>:pre-migration)
-#   2. Copies its home into ~/.orca/<project>/home, which orca-start.sh mounts as ~
+#   2. Copies its home into ~/.orca/projects/<project>/home, which orca-start.sh mounts as ~
 #      (minus the old Claude program and caches)
 #   3. Re-reads the old container and checks every copied file against it
 # It never changes or removes the old container. Requires the orca image
@@ -59,7 +59,7 @@ if [ -z "$FOLDER_NAME" ] || [ "$FOLDER_NAME" = "/" ]; then
     FOLDER_NAME="project"
 fi
 NEW="orca-${FOLDER_NAME}"
-PROJECT_DIR="$HOME/.orca/$FOLDER_NAME"
+PROJECT_DIR="$HOME/.orca/projects/$FOLDER_NAME"
 HOME_DIR="$PROJECT_DIR/home"
 BACKUP="orca-backup/$(echo "$OLD" | tr '[:upper:]' '[:lower:]'):pre-migration"
 
