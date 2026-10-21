@@ -31,6 +31,10 @@ env:
 jobs:
   build:
     strategy:
+      # The repo's `main` ruleset requires these jobs by name, e.g.
+      # "build (linux/amd64, amd64, ubuntu-24.04)", and the name comes from these matrix
+      # values. If they change, update the required checks in Settings → Rules → Rulesets,
+      # or pull requests wait forever for checks that no longer exist.
       matrix:
         include:
           - platform: linux/amd64
