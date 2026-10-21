@@ -6,14 +6,16 @@
 # versions, package caches) are kept per project, across container rebuilds.
 #
 # Tools install outside ~ (/usr, /opt), because the mounted home hides /home/node.
-# Rebuilt weekly by .github/workflows/image.yml, so unpinned tools stay current.
+#
+# Order matters: each step is a layer, and an update downloads only the layers that changed
+# and everything after them. Large, rarely changing steps come first; small or frequently
+# changed ones last. .github/workflows/image.yml reuses unchanged layers on each build and
+# rebuilds everything monthly, which picks up new versions of the unpinned tools.
+#
+# Settings: PYTHON_VERSION (Python section).
 
 # Node: the current long-term-support release
 FROM node:24-trixie-slim
-
-# Default Python minor version (patch updates come with each rebuild). Projects can ask for
-# another with .python-version or requires-python; uv downloads it into their home.
-ARG PYTHON_VERSION=3.14
 
 # ── System packages ─────────────────────────────────────────────────────────────────────
 #   git, openssh-client  version control, ssh for git remotes
@@ -43,20 +45,31 @@ RUN apt-get update && apt-get install -y curl ca-certificates \
 # build, and projects download it into ~/.cache/ms-playwright, kept across rebuilds.
 RUN npx -y playwright install-deps chromium && rm -rf /var/lib/apt/lists/*
 
-# ── Python ──────────────────────────────────────────────────────────────────────────────
-# uv (docs.astral.sh/uv) manages Python versions, virtual environments and packages:
-# projects use `uv run`, `uv add`, and a .venv each. A uv-installed Python is the default
-# python3. Project .venvs point at a link uv keeps on the newest patch; if an image update
-# changes the minor version, uv rebuilds the .venv on the next `uv run`.
-RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh \
-    && UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/usr/local/bin \
-       uv python install "$PYTHON_VERSION" --default
-
 # ── Node package managers ───────────────────────────────────────────────────────────────
 # Corepack provides pnpm and yarn at the version each project's package.json asks for,
 # downloading it without asking (an agent can't answer the prompt).
 RUN corepack enable
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# ── Container user ──────────────────────────────────────────────────────────────────────
+ARG USERNAME=node
+RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME
+# Commits show as claude-bot unless a project's own ~/.gitconfig says otherwise
+RUN git config --system user.name "claude-bot" \
+    && git config --system user.email "claude-bot@users.noreply.github.com"
+
+# ── Python ──────────────────────────────────────────────────────────────────────────────
+# uv (docs.astral.sh/uv) manages Python versions, virtual environments and packages:
+# projects use `uv run`, `uv add`, and a .venv each. A uv-installed Python is the default
+# python3. Project .venvs point at a link uv keeps on the newest patch; if an image update
+# changes the minor version, uv rebuilds the .venv on the next `uv run`.
+#
+# Default Python minor version (patch updates come with each rebuild). Projects can ask for
+# another with .python-version or requires-python; uv downloads it into their home.
+ARG PYTHON_VERSION=3.14
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh \
+    && UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/usr/local/bin \
+       uv python install "$PYTHON_VERSION" --default
 
 # ── Agent CLIs ──────────────────────────────────────────────────────────────────────────
 # Claude Code: Anthropic's native installer (code.claude.com/docs/en/setup), which keeps
@@ -64,8 +77,6 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 # the project's home (~/.local/bin, first on PATH), so a new container starts right away
 # with this copy, and each project then runs its own up-to-date one.
 RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
-# What every session should know about the container, read by Claude in every project
-COPY image/environment.md /etc/claude-code/CLAUDE.md
 
 # ── Installs inside containers ──────────────────────────────────────────────────────────
 # Every package manager installs tools into the project's home, with its commands on PATH:
@@ -86,12 +97,8 @@ ENV NPM_CONFIG_PREFIX=/home/node/.local \
     PIP_BREAK_SYSTEM_PACKAGES=1
 ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/claude/.local/bin:$PATH"
 
-# ── Container user ──────────────────────────────────────────────────────────────────────
-ARG USERNAME=node
-RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME
-# Commits show as claude-bot unless a project's own ~/.gitconfig says otherwise
-RUN git config --system user.name "claude-bot" \
-    && git config --system user.email "claude-bot@users.noreply.github.com"
+# What every session should know about the container, read by Claude in every project
+COPY image/environment.md /etc/claude-code/CLAUDE.md
 
 USER $USERNAME
 WORKDIR /workspace
