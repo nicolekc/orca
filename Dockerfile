@@ -59,6 +59,9 @@ RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME
 # Commits show as claude-bot unless a project's own ~/.gitconfig says otherwise
 RUN git config --system user.name "claude-bot" \
     && git config --system user.email "claude-bot@users.noreply.github.com"
+# Owned by node so each project's new node_modules volume is too: Docker gives an empty
+# volume the ownership of the folder it's mounted over. Without this, npm install needs sudo.
+RUN mkdir -p /workspace/node_modules && chown $USERNAME:$USERNAME /workspace/node_modules
 
 # ── Python ──────────────────────────────────────────────────────────────────────────────
 # uv (docs.astral.sh/uv) manages Python versions, virtual environments and packages:
