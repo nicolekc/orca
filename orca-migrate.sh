@@ -1,15 +1,16 @@
 #!/bin/bash
-# orca-migrate.sh - Move an old container's Claude/gh state into a state volume
+# orca-migrate.sh - Move an old container's home into the project's home folder
 # Usage: orca-migrate.sh [project-path] [--from <old-path>]
 #   project-path  defaults to the current folder; the old container is the one mounting it
 #   --from        the folder the old container mounted, if the project has been renamed
 #                 since (e.g. orca-migrate.sh ~/orca --from ~/ralph-docker)
 #
-# Containers created before the state volume existed keep Claude/gh logins, memory,
-# sessions, plugins and settings inside the container, where removing it loses them.
-# This script:
+# Containers created before project home folders existed keep their home (Claude/gh
+# logins, memory, sessions, plugins, settings, git config) inside the container, where
+# removing it loses them. This script:
 #   1. Backs up the whole old container as an image (orca-backup/<old>:pre-migration)
-#   2. Copies its state into the <new-container>_state volume
+#   2. Copies its home into ~/.orca/projects/<project>/home, which orca-start.sh mounts as ~
+#      (minus the old Claude program and caches)
 #   3. Re-reads the old container and checks every copied file against it
 # It never changes or removes the old container. Requires the orca image
 # (docker build -t orca .) and the old container stopped.
@@ -58,29 +59,37 @@ if [ -z "$FOLDER_NAME" ] || [ "$FOLDER_NAME" = "/" ]; then
     FOLDER_NAME="project"
 fi
 NEW="orca-${FOLDER_NAME}"
-STATE="${NEW}_state"
+PROJECT_DIR="$HOME/.orca/projects/$FOLDER_NAME"
+HOME_DIR="$PROJECT_DIR/home"
 BACKUP="orca-backup/$(echo "$OLD" | tr '[:upper:]' '[:lower:]'):pre-migration"
 
-# Never merge into something already in use; a leftover from a failed run is safe to remove
+# Never merge into something already in use; the old container is untouched, so a
+# leftover from a failed run is safe to remove
 docker container inspect "$NEW" >/dev/null 2>&1 && die "Container '$NEW' already exists"
-docker volume inspect "$STATE" >/dev/null 2>&1 && die "Volume '$STATE' already exists (from an earlier run? remove it: docker volume rm $STATE)"
+if [ -f "$PROJECT_DIR/project-path" ] && [ "$(cat "$PROJECT_DIR/project-path")" != "$PROJECT_PATH" ]; then
+    die "$PROJECT_DIR belongs to $(cat "$PROJECT_DIR/project-path"), not $PROJECT_PATH"
+fi
+if [ -d "$HOME_DIR" ] && [ -n "$(ls -A "$HOME_DIR")" ]; then
+    die "$HOME_DIR already has files (from an earlier run? remove it: rm -r \"$HOME_DIR\")"
+fi
 
 echo "🔀 Migrating $OLD → $NEW"
 
 echo "💾 Backing up the whole container: $BACKUP"
 docker commit "$OLD" "$BACKUP" >/dev/null
 
-# Helpers run as the node user, like Claude does; mounting at /home/node/state gives a
-# new volume the image's ownership of that dir.
-run_helper() {  # run_helper <script> <volume-mount> - stdin is passed through
+mkdir -p "$HOME_DIR"
+echo "$PROJECT_PATH" > "$PROJECT_DIR/project-path"
+
+run_helper() {  # run_helper <script> <mount> - stdin is passed through
     docker run --rm -i -v "$2" -v "$HELPERS:/migrate:ro" "$IMAGE" bash "/migrate/$1"
 }
 
-echo "📦 Copying state into volume $STATE"
-docker export "$OLD" | run_helper copy-state.sh "$STATE:/home/node/state"
+echo "📦 Copying its home into $HOME_DIR"
+docker export "$OLD" | run_helper copy-home.sh "$HOME_DIR:/dest"
 
 echo "🔍 Checking the copy against $OLD"
-docker export "$OLD" | run_helper verify-state.sh "$STATE:/home/node/state:ro"
+docker export "$OLD" | run_helper verify-home.sh "$HOME_DIR:/dest:ro"
 
 echo ""
 if [ -d "$LOOKUP" ]; then

@@ -27,30 +27,28 @@ RUN npm install -g @playwright/mcp
 ARG USERNAME=node
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME
 
-# Create config directories for node user (gh, ssh need these)
-#   /home/node/state - Claude Code and gh state; the run scripts mount a volume here
-RUN mkdir -p /home/node/.config /home/node/.ssh /home/node/.local /home/node/state \
-    && chown -R node:node /home/node/.config /home/node/.ssh /home/node/.local /home/node/state \
-    && chmod 700 /home/node/.ssh
-
 # Configure git for claude-bot commits (as root, applies globally)
 RUN git config --global user.name "claude-bot" \
     && git config --global user.email "claude-bot@users.noreply.github.com"
 
-# Switch to node user for Claude install (installs to ~/.local/bin)
+# Agent CLIs install system-wide, never into ~: orca-start.sh mounts each project's own
+# home folder over /home/node, so everything in ~ is that project's data (logins, memory,
+# sessions, settings) and survives the container. Update them by rebuilding the image.
+#
+# Claude Code: Anthropic's apt package (code.claude.com/docs/en/setup, Linux package
+# managers), the documented system-wide install; it doesn't update itself. The build
+# fails unless the signing key has Anthropic's published fingerprint.
+RUN apt-get update && apt-get install -y gnupg \
+    && install -d -m 0755 /etc/apt/keyrings \
+    && curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o /etc/apt/keyrings/claude-code.asc \
+    && gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc \
+       | grep -q '^fpr:.*:31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE:' \
+    && echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/stable stable main" \
+       > /etc/apt/sources.list.d/claude-code.list \
+    && apt-get update && apt-get install -y claude-code \
+    && rm -rf /var/lib/apt/lists/*
+
 USER $USERNAME
-
-# Claude Code native install (as node user)
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
-# Ensure claude is in PATH
-ENV PATH="/home/node/.local/bin:$PATH"
-
-# Keep logins, memory, sessions, plugins and settings in /home/node/state, which the
-# run scripts back with a per-project volume, so removing a container doesn't lose them.
-# Per project, not shared: Claude files memory by working dir, and every project is /workspace.
-ENV CLAUDE_CONFIG_DIR=/home/node/state/claude \
-    GH_CONFIG_DIR=/home/node/state/gh
 
 WORKDIR /workspace
 CMD ["bash"]

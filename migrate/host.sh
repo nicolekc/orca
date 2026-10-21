@@ -7,13 +7,13 @@ abs_path() {
     fi
 }
 
-# containers_on <abs-path>: containers mounting <abs-path> as /workspace, as name|running|state
-# (state is empty for a pre-migration container)
+# containers_on <abs-path>: containers mounting <abs-path> as /workspace, as name|running|home
+# (home is empty for a pre-migration container, which keeps its home inside it)
 containers_on() {
     local rp="$1" c
     if [ -d "$1" ]; then rp=$(cd "$1" && pwd -P); fi
     for c in $(docker ps -a --format '{{.Names}}'); do
-        docker inspect -f '{{.Name}}|{{.State.Running}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/home/node/state"}}state{{end}}{{end}}' "$c"
+        docker inspect -f '{{.Name}}|{{.State.Running}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/home/node"}}home{{end}}{{end}}' "$c"
     done | awk -F'|' -v p="$1" -v rp="$rp" '$3 == p || $3 == rp { sub(/^\//, "", $1); print $1 "|" $2 "|" $4 }'
 }
 
@@ -26,7 +26,7 @@ legacy_on() {
 list_legacy() {
     local c
     for c in $(docker ps -a --format '{{.Names}}'); do
-        docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/node/state"}}migrated{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$c" \
+        docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/node"}}migrated{{end}}{{end}}|{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$c" \
             | awk -F'|' -v n="$c" '$1 == "" { print "     " n "  →  " $2 }'
     done
 }
