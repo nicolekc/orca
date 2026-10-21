@@ -14,7 +14,11 @@ import {
 } from "../projects";
 import { allForwards, ensureNetwork, syncProxy } from "../proxy";
 
-export type StartOptions = { fresh?: boolean };
+export type StartOptions = {
+  fresh?: boolean;
+  /** Run this in the container instead of opening a shell (the container stays up in the background) */
+  command?: string[];
+};
 
 /** Starts (or enters) the container for the project folder at `path`. */
 export async function start(ctx: Context, path: string, opts: StartOptions): Promise<number> {
@@ -59,6 +63,10 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
     await docker(ctx, ["rm", container]);
   } else if (existing) {
     await noticeOutdated(ctx, existing.image, folder);
+    if (opts.command) {
+      if (!existing.running) await docker(ctx, ["start", container]);
+      return ctx.docker.attach(["exec", "-it", container, ...opts.command]);
+    }
     if (existing.running) {
       ctx.print(`${name} is already running: opening another shell in it`);
       return ctx.docker.attach(["exec", "-it", container, "bash"]);
@@ -69,8 +77,7 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
 
   if (!(await latestImage(ctx))) throw new OrcaError("The orca image isn't on this Mac yet.", "Run: orca update");
   ctx.print(`Creating ${name}: ${tilde(ctx, folder)}, home in ${tilde(ctx, home)}`);
-  return ctx.docker.attach([
-    "run", "-it",
+  const create = [
     "--name", container,
     "--label", `orca.project=${name}`,
     "--memory=8g", "--cpus=4",
@@ -79,7 +86,11 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
     "-v", `${volumeName(container)}:/workspace/node_modules`,
     "-v", `${home}:/home/node`,
     "orca:latest", "bash",
-  ]);
+  ];
+  if (!opts.command) return ctx.docker.attach(["run", "-it", ...create]);
+  // Its shell waits in the background, so the container outlives the command
+  await docker(ctx, ["run", "-d", "-it", ...create]);
+  return ctx.docker.attach(["exec", "-it", container, ...opts.command]);
 }
 
 /** The record already pointing at this folder, if any (e.g. `orca new` projects). */

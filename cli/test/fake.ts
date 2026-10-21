@@ -144,6 +144,7 @@ export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = 
   const full: FakeState = { containers: [], volumes: [], networks: [], latest: "sha256:new", created: {}, ...state };
   const { docker, calls, attached } = fakeDocker(full);
   const lines: string[] = [];
+  const launched: string[][] = [];
   const ctx: Context = {
     docker,
     orcaDir: join(home, ".orca"),
@@ -151,6 +152,7 @@ export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = 
     print: (line = "") => lines.push(line),
     ask: answers.length ? async () => answers.shift() ?? "" : null,
     color: false,
+    launch: async (argv) => void launched.push(argv),
   };
-  return { ctx, home, state: full, calls, attached, lines, output: () => lines.join("\n") };
+  return { ctx, home, state: full, calls, attached, lines, launched, output: () => lines.join("\n") };
 }

@@ -3,7 +3,8 @@
 **Status:** in progress.
 1. **Done:** the `orca` command (`cli/`, TypeScript compiled with Bun): picker, `start`, `new`, `list`, `delete`, `update`, over the records described here.
 2. **Done:** `orca forward`: a Caddy proxy (`orca-proxy`) on `127.0.0.1:7320` (`proxyPort` in `~/.orca/config.json`), hostnames `<port>.<project>.localhost`, a network per project that only the proxy also joins, and requests from project networks refused. Orca runs the proxy while any project has forwards; no restart policy.
-3. **Later:** `orca serve` web page, and a Mac app that owns it and the proxy.
+3. **Done:** `orca serve`: a dashboard on `127.0.0.1:7321` (`servePort`) with projects, one project (forwards, sessions, image update, delete) and recent sessions across projects; actions open a terminal (`terminal` in config.json, default macOS Terminal). React + shadcn, bundled into the `orca` file by Bun. Guarded by a per-run token (see "Container Trust Boundary" in CLAUDE.md).
+4. **Later:** a Mac app that owns `orca serve` and the proxy; a terminal picker in the dashboard over the same setting.
 
 ## Goal
 

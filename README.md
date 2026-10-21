@@ -141,7 +141,7 @@ orca update        # get the image (and later, newer orca and images)
 orca               # pick a project and start it
 ```
 
-`orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
+`orca serve` (a dashboard of every project, forward and Claude session), `orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
 
 ## Repository Structure
 

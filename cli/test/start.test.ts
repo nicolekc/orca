@@ -131,6 +131,36 @@ test("a folder name Docker can't use is reported", async () => {
   expect(err.message).toContain("my app");
 });
 
+test("a command runs in a new container, which keeps running in the background", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  await start(t.ctx, dir, { command: ["claude", "--resume", "abc"] });
+  const run = t.calls.find((c) => c[0] === "run")!;
+  expect(run.slice(0, 3)).toEqual(["run", "-d", "-it"]);
+  expect(run.slice(-2)).toEqual(["orca:latest", "bash"]);
+  expect(t.attached[0]).toEqual(["exec", "-it", "orca-app", "claude", "--resume", "abc"]);
+});
+
+test("a command in a stopped container starts it in the background first", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  await start(t.ctx, dir, {});
+  t.state.containers.push({ name: "orca-app", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  await start(t.ctx, dir, { command: ["claude"] });
+  expect(t.calls).toContainEqual(["start", "orca-app"]);
+  expect(t.attached[1]).toEqual(["exec", "-it", "orca-app", "claude"]);
+});
+
+test("a command in a running container just runs", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  await start(t.ctx, dir, {});
+  t.state.containers.push({ name: "orca-app", running: true, workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  await start(t.ctx, dir, { command: ["claude"] });
+  expect(t.calls.some((c) => c[0] === "start")).toBe(false);
+  expect(t.attached[1]).toEqual(["exec", "-it", "orca-app", "claude"]);
+});
+
 test("a project made by orca new starts under its own name, not 'workspace'", async () => {
   const t = fakeContext();
   const record = join(t.ctx.orcaDir, "projects/web");

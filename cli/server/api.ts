@@ -1,0 +1,147 @@
+import { del } from "../commands/delete";
+import { forward } from "../commands/forward";
+import { makeRecord } from "../commands/new";
+import { OrcaError, tilde, type Context } from "../context";
+import { stateOf, type State } from "../present";
+import { inspectImage, latestImage, loadProjects, type Project } from "../projects";
+import { allForwards, proxyState, urlFor } from "../proxy";
+import { listSessions, type Session } from "../sessions";
+import { openInTerminal } from "../terminal";
+
+/** What the dashboard shows for a project. */
+export type ProjectView = {
+  name: string;
+  folder: string | null;
+  state: State;
+  imageUpdate: boolean;
+  managed: boolean;
+  forwards: { port: number; url: string }[];
+  lastUsed: number;
+};
+export type ProjectDetail = ProjectView & { sessions: Session[]; image: { container: string | null; newest: string | null } };
+export type ActionResult = { messages: string[] };
+export type ApiError = { error: string; fix?: string };
+
+/** The dashboard's JSON API over the same core as the command line. Requests are already guarded. */
+export function createApi(ctx: Context, opts: { orca: string; version: string }) {
+  return async (req: Request): Promise<Response | null> => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+    if (parts[0] !== "api") return null;
+    try {
+      return Response.json(await route(req.method, parts.slice(1), req));
+    } catch (e) {
+      if (e instanceof NotFound) return Response.json({ error: e.message, fix: e.fix } satisfies ApiError, { status: 404 });
+      if (e instanceof OrcaError) return Response.json({ error: e.message, fix: e.fix } satisfies ApiError, { status: 400 });
+      return Response.json({ error: String((e as Error)?.message ?? e) } satisfies ApiError, { status: 500 });
+    }
+  };
+
+  async function route(method: string, [what, name, action, arg]: string[], req: Request): Promise<unknown> {
+    if (method === "GET" && what === "info") return { version: opts.version, proxy: await proxyState(ctx) };
+    if (method === "GET" && what === "sessions")
+      return (await loadProjects(ctx)).flatMap((p) => listSessions(ctx, p.name)).sort((a, b) => b.updated - a.updated).slice(0, 200);
+    if (what !== "projects") throw new NotFound("No such API.");
+
+    if (!name) {
+      if (method === "GET") return (await loadProjects(ctx)).map(view);
+      if (method === "POST") {
+        const workspace = makeRecord(ctx, String((await json(req)).name ?? ""));
+        await openInTerminal(ctx, [opts.orca, "start", workspace]);
+        return done(`Opening ${tilde(ctx, workspace)} in a terminal.`);
+      }
+    }
+
+    const projects = await loadProjects(ctx);
+    const p = projects.find((x) => x.name === name);
+    if (!p) throw new NotFound(`There's no project named "${name}".`, `Projects: ${projects.map((x) => x.name).join(", ") || "none yet"}`);
+
+    if (method === "GET" && !action) {
+      const latest = await latestImage(ctx);
+      const container = p.container ? ((await inspectImage(ctx, p.container.image))?.created ?? null) : null;
+      return { ...view(p), sessions: listSessions(ctx, p.name), image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
+    }
+    const b = method === "GET" ? {} : await json(req);
+
+    if (method === "POST" && action === "open") {
+      const folder = startable(p);
+      const session = b.session;
+      if (session !== undefined) {
+        if (typeof session !== "string" || !listSessions(ctx, p.name).some((s) => s.id === session))
+          throw new OrcaError(`${p.name} has no session ${String(session)}.`);
+        await openInTerminal(ctx, [opts.orca, "start", folder, "--", "claude", "--resume", session]);
+        return done(`Resuming the session in a terminal.`);
+      }
+      await openInTerminal(ctx, [opts.orca, "start", folder]);
+      return done(`Opening ${p.name} in a terminal.`);
+    }
+    if (method === "POST" && action === "recreate") {
+      const folder = startable(p);
+      if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Exit every session in it first, then recreate it.");
+      await openInTerminal(ctx, [opts.orca, "start", "--fresh", folder]);
+      return done(`Recreating ${p.name} in a terminal.`);
+    }
+    if (action === "forwards" && method === "POST") return capture((c) => forward(c, { project: p.name, add: port(b.port) }));
+    if (action === "forwards" && method === "DELETE" && arg) return capture((c) => forward(c, { project: p.name, remove: port(arg) }));
+    if (method === "POST" && action === "delete") {
+      if (b.confirm !== p.name) throw new OrcaError(`Type ${p.name} to confirm deleting it.`);
+      return capture((c) => del(c, p.name, { home: b.home === true, yes: true }));
+    }
+    throw new NotFound("No such API.");
+  }
+
+  function view(p: Project): ProjectView {
+    return {
+      name: p.name,
+      folder: p.folder ? tilde(ctx, p.folder) : null,
+      state: stateOf(p),
+      imageUpdate: p.outdated,
+      managed: p.managed,
+      forwards: allForwards(ctx).filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
+      lastUsed: Math.max(p.container?.startedAt ?? 0, p.legacy?.startedAt ?? 0),
+    };
+  }
+
+  /** The folder to start, or why it can't be started from here. */
+  function startable(p: Project): string {
+    if (!p.container && p.legacy)
+      throw new OrcaError(`${p.name} still has its container from before project homes, ${p.legacy.name}.`, `Migrate it first: ~/orca/orca-migrate.sh ${p.folder ? tilde(ctx, p.folder) : ""}`.trim());
+    if (!p.folder) throw new OrcaError(`${p.name} has no project folder on record.`);
+    return p.folder;
+  }
+
+  /** Runs a command, collecting what it would have printed. */
+  async function capture(fn: (c: Context) => Promise<unknown>): Promise<ActionResult> {
+    const messages: string[] = [];
+    await fn({ ...ctx, print: (l = "") => messages.push(l), ask: null });
+    return { messages };
+  }
+}
+
+const done = (message: string): ActionResult => ({ messages: [message] });
+
+function port(v: unknown): number {
+  const s = String(v);
+  if (!/^\d+$/.test(s)) throw new OrcaError(`"${s}" isn't a port: use a number from 1 to 65535.`);
+  return Number(s);
+}
+
+async function json(req: Request): Promise<Record<string, unknown>> {
+  const text = await req.text();
+  if (!text) return {};
+  try {
+    const v = JSON.parse(text);
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    throw new OrcaError("The request body isn't valid JSON.");
+  }
+}
+
+class NotFound extends Error {
+  constructor(
+    message: string,
+    readonly fix?: string,
+  ) {
+    super(message);
+  }
+}
