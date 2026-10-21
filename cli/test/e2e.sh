@@ -84,8 +84,10 @@ curl -fs -b orca_token=$token $U/api/projects | grep -q '"name":"demo"' || fail 
 curl -fs $U/app | grep -q '<div id="root">' || fail "the page should be served"
 # From a container: on Linux the Mac-only loopback isn't reachable at all; on a Mac it is, and the
 # token check refuses it (the 401 above). Either way, never a 200.
-docker run --rm --add-host=host.docker.internal:host-gateway orca:latest curl -s -o /dev/null -w '%{http_code}' -m 3 http://host.docker.internal:7321/api/projects | grep -qv 200 \
-  || fail "a container should not get the API"
+from_container=$(docker run --rm --add-host=host.docker.internal:host-gateway orca:latest \
+  curl -s -o /dev/null -w '%{http_code}' -m 3 http://host.docker.internal:7321/api/projects || true)
+echo "   a container calling the dashboard got: $from_container"
+[ "$from_container" != 200 ] || fail "a container should not get the API"
 kill $serve_pid
 
 step "delete removes container and volume, keeps the home"
