@@ -1,2 +1,6 @@
 # Orca logs (iteration transcripts for debugging)
 /orca-logs/
+
+# orca command builds (make build / make dist)
+/dist/
+/node_modules/

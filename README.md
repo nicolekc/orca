@@ -131,6 +131,18 @@ For headless execution. Install with `--bash-loop` flag, then run inside a Docke
 
 Each iteration reads `ORCA_PROMPT.md` (a thin wrapper around `.orca/orca.md`) and completes one pipeline step.
 
+## Containers: the `orca` command
+
+Each project runs in its own container, with its own home (logins, Claude memory, settings) kept on the Mac in `~/.orca/projects/<project>/home`. The `orca` command manages them from the Mac.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nicolekc/orca/main/cli/install.sh | bash
+orca update        # get the image (and later, newer orca and images)
+orca               # pick a project and start it
+```
+
+`orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
+
 ## Repository Structure
 
 This repo is **self-hosting** — the framework is installed into itself for development.

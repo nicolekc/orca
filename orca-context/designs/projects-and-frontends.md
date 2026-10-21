@@ -1,10 +1,13 @@
 # Projects as records, with several front ends
 
-**Status:** open. Revisit when starting from a folder gets in the way, or before building any menu, dashboard or orchestrator.
+**Status:** in progress.
+1. **Done:** the `orca` command (`cli/`, TypeScript compiled with Bun): picker, `start`, `new`, `list`, `delete`, `update`, over the records described here.
+2. **Next:** `orca forward` through a proxy on its own port (default `127.0.0.1:7320`, configurable), per-project networks.
+3. **Later:** `orca serve` web page, and a Mac app that owns it and the proxy.
 
 ## Goal
 
-Start, browse, enter, create and delete projects from any of: the old way (`cd` + `orca-start.sh`), an interactive command-line menu, or a web dashboard (like the Docker app). All of them show the same projects and sessions. Creating a project shouldn't require choosing where its files live, but they must persist on the Mac.
+Start, browse, enter, create and delete projects from any of: the old way (`cd` + `orca start`), an interactive command-line menu, or a web dashboard (like the Docker app). All of them show the same projects and sessions. Creating a project shouldn't require choosing where its files live, but they must persist on the Mac.
 
 ## Proposal
 

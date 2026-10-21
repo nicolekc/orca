@@ -1,7 +1,7 @@
 # The orca image: what every project's container starts with.
 #
 # What goes here: tools that need root or system packages, and tools every project uses.
-# What doesn't: anything a project can install itself into ~, which orca-start.sh mounts
+# What doesn't: anything a project can install itself into ~, which `orca start` mounts
 # from ~/.orca/projects/<project>/home on the Mac. Downloads there (browsers, Python
 # versions, package caches) are kept per project, across container rebuilds.
 #

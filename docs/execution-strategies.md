@@ -20,7 +20,7 @@ For interactive Claude sessions (Claude Max subscription). No bash wrapper neede
 
 For headless execution in Docker containers. Uses `claude -p` (print mode).
 
-1. Enter the Docker container: `orca-start.sh /path/to/project`
+1. Enter the Docker container: `orca start /path/to/project`
 2. Run: `./orca-loop.sh prds/your-feature.json 20`
 3. Each iteration reads `ORCA_PROMPT.md` (a thin wrapper that points to `.orca/orca.md`) and completes one pipeline step
 4. Loop continues until all tasks done or max iterations reached

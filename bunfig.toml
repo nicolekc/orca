@@ -1,0 +1,4 @@
+# Never install a package version published less than a week ago (protection against
+# compromised releases). Applies to every `bun install` in this repo.
+[install]
+minimumReleaseAge = 604800

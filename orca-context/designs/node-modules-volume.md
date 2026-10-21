@@ -2,7 +2,7 @@
 
 **Status:** open.
 
-**Today:** `orca-start.sh` mounts a Docker named volume, `orca-<project>_node_modules`, over `/workspace/node_modules`. Native modules are compiled per operating system, so the Mac's macOS builds can't run in the Linux container and the reverse. The volume hides the Mac's copy inside the container, and the container's copy never reaches the Mac. It survives `docker rm`.
+**Today:** `orca start` mounts a Docker named volume, `orca-<project>_node_modules`, over `/workspace/node_modules`. Native modules are compiled per operating system, so the Mac's macOS builds can't run in the Linux container and the reverse. The volume hides the Mac's copy inside the container, and the container's copy never reaches the Mac. It survives `docker rm`.
 
 **Questions:**
 - Does it need a name? An anonymous volume would be removed with the container (`docker rm -v`) or left orphaned; a named one survives recreation, which is why it was named. A volume tied to the project rather than the container name may fit the project-records design better.
