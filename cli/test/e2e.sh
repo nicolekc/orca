@@ -48,11 +48,36 @@ step "new makes a project with its code in its record"
 in_tty new web
 [ "$(mount_of orca-web /workspace)" = "$ORCA_DIR/projects/web/workspace" ] || fail "new workspace mount"
 
+step "a forward reaches a server in the project's container"
+docker start orca-demo >/dev/null
+docker exec -d orca-demo python3 -m http.server 3000
+"$ORCA" forward 3000 --project demo | tee out.txt
+grep -q "http://3000.demo.localhost:7320" out.txt || fail "forward should print its address"
+for _ in $(seq 20); do curl -fs -o /dev/null http://3000.demo.localhost:7320/ && break; sleep 0.5; done
+curl -fsS http://3000.demo.localhost:7320/ | grep -q "Directory listing" || fail "the forward should reach the server"
+curl -s http://9999.demo.localhost:7320/ | grep -q "No forward" || fail "an unknown address should say so"
+
+step "another project's container can't use the forward, or reach the project directly"
+docker start orca-web >/dev/null
+code=$(docker exec orca-web curl -s -o /dev/null -w '%{http_code}' -H 'Host: 3000.demo.localhost' http://orca-proxy/)
+[ "$code" = 403 ] || fail "a request from another project through the proxy should be refused (got $code)"
+docker exec orca-web curl -s -m 3 -o /dev/null http://orca-demo:3000/ && fail "projects should not reach each other's containers"
+docker stop orca-demo orca-web >/dev/null
+
+step "list shows the forward"
+"$ORCA" list | tee out.txt
+grep -q "http://3000.demo.localhost:7320 → demo:3000" out.txt || fail "list should show the forward"
+
 step "delete removes container and volume, keeps the home"
 "$ORCA" delete demo --yes
 docker inspect orca-demo >/dev/null 2>&1 && fail "container should be gone"
 docker volume inspect orca-demo_node_modules >/dev/null 2>&1 && fail "volume should be gone"
 [ -d "$ORCA_DIR/projects/demo/home" ] || fail "home should stay"
+docker network inspect orca-net-demo >/dev/null 2>&1 && fail "the project's network should be gone"
+
+step "removing the last forward stops the proxy"
+"$ORCA" forward --remove 3000 --project demo
+docker inspect orca-proxy >/dev/null 2>&1 && fail "the proxy should be gone"
 
 step "delete --home removes the home, never the code"
 "$ORCA" delete web --home --yes

@@ -12,6 +12,7 @@ import {
   recordDir,
   volumeName,
 } from "../projects";
+import { allForwards, ensureNetwork, syncProxy } from "../proxy";
 
 export type StartOptions = { fresh?: boolean };
 
@@ -46,6 +47,11 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
   if (other)
     throw new OrcaError(`${other.name} is already running on this folder; both would edit the same files.`, `Exit it first, or: docker stop ${other.name}`);
 
+  // The project's own network, which only the forwards proxy also joins
+  const network = await ensureNetwork(ctx, name);
+  if (existing && !opts.fresh && !existing.networks.includes(network)) await docker(ctx, ["network", "connect", network, container]);
+  if (allForwards(ctx).length) await syncProxy(ctx);
+
   if (existing && opts.fresh) {
     if (existing.running)
       throw new OrcaError(`${container} is running.`, `Exit every session in it first, or: docker stop ${container}`);
@@ -68,6 +74,7 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
     "--name", container,
     "--label", `orca.project=${name}`,
     "--memory=8g", "--cpus=4",
+    "--network", network,
     "-v", `${folder}:/workspace`,
     "-v", `${volumeName(container)}:/workspace/node_modules`,
     "-v", `${home}:/home/node`,

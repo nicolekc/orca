@@ -1,11 +1,20 @@
 import { tilde, type Context } from "../context";
 import { stateOf, symbol, IMAGE_UPDATE } from "../present";
 import { loadProjects } from "../projects";
+import { allForwards, proxyState, urlFor } from "../proxy";
 
 export async function list(ctx: Context, opts: { json?: boolean }): Promise<void> {
   const projects = await loadProjects(ctx);
   if (opts.json) {
-    const rows = projects.map((p) => ({ name: p.name, folder: p.folder, state: stateOf(p), imageUpdate: p.outdated, container: p.container?.name ?? null }));
+    const forwards = allForwards(ctx);
+    const rows = projects.map((p) => ({
+      name: p.name,
+      folder: p.folder,
+      state: stateOf(p),
+      imageUpdate: p.outdated,
+      container: p.container?.name ?? null,
+      forwards: forwards.filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
+    }));
     ctx.print(JSON.stringify(rows, null, 2));
     return;
   }
@@ -19,5 +28,13 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
     const state = `${symbol[stateOf(p)]} ${stateOf(p)}`;
     const folder = p.folder ? tilde(ctx, p.folder) : "";
     ctx.print(`${p.name.padEnd(width)}  ${state.padEnd(stateWidth)}  ${folder}${p.outdated ? `  ${IMAGE_UPDATE}` : ""}`.trimEnd());
+  }
+
+  const forwards = allForwards(ctx);
+  if (forwards.length) {
+    const proxy = await proxyState(ctx);
+    ctx.print();
+    ctx.print(`Forwards (proxy on 127.0.0.1:${proxy.port}, ${proxy.running ? "running" : "stopped: starts with orca start or orca forward"}):`);
+    for (const f of forwards) ctx.print(`  ${urlFor(ctx, f.port, f.project)} → ${f.project}:${f.port}`);
   }
 }

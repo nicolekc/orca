@@ -2,7 +2,7 @@
 
 **Status:** in progress.
 1. **Done:** the `orca` command (`cli/`, TypeScript compiled with Bun): picker, `start`, `new`, `list`, `delete`, `update`, over the records described here.
-2. **Next:** `orca forward` through a proxy on its own port (default `127.0.0.1:7320`, configurable), per-project networks.
+2. **Done:** `orca forward`: a Caddy proxy (`orca-proxy`) on `127.0.0.1:7320` (`proxyPort` in `~/.orca/config.json`), hostnames `<port>.<project>.localhost`, a network per project that only the proxy also joins, and requests from project networks refused. Orca runs the proxy while any project has forwards; no restart policy.
 3. **Later:** `orca serve` web page, and a Mac app that owns it and the proxy.
 
 ## Goal
