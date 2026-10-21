@@ -3,16 +3,18 @@
 # Left out of the copied home: the old Claude program (the image now provides it, and a
 # stale copy in ~ would shadow it) and caches, which rebuild themselves.
 SKIP=(home/node/.local/share/claude home/node/.local/bin/claude home/node/.local/state/claude
-      home/node/.npm home/node/.cache)
+      home/node/.npm home/node/.cache home/node/.pnpm-store)
 
 # extract_home <dir>: extract the old home from a container export on stdin into <dir>/home/node
 extract_home() {
-    local args=() p err
-    for p in "${SKIP[@]}"; do args+=(--exclude="$p"); done
+    local p err
+    # Extract everything, then delete SKIP: excluding it from tar breaks hard links whose
+    # first copy in the archive is inside a skipped folder (pnpm links ~/.cache and its store).
     # The export spells paths with or without ./; one spelling is always missing, which is fine
-    err=$(tar -x -C "$1" "${args[@]}" home/node ./home/node 2>&1 >/dev/null \
+    err=$(tar -x -C "$1" home/node ./home/node 2>&1 >/dev/null \
         | grep -v -e 'Not found in archive' -e 'Exiting with failure status due to previous errors' || true)
     [ -z "$err" ] || { echo "tar failed: $err" >&2; exit 1; }
+    for p in "${SKIP[@]}"; do rm -rf "${1:?}/$p"; done
     [ -d "$1/home/node/.claude" ] || { echo "No ~/.claude in the old container — nothing to migrate" >&2; exit 1; }
 }
 
