@@ -25,7 +25,7 @@ in_tty start "$T/dev/demo"
 [ "$(mount_of orca-demo /workspace)" = "$T/dev/demo" ] || fail "workspace mount"
 [ "$(mount_of orca-demo /home/node)" = "$ORCA_DIR/projects/demo/home" ] || fail "home mount"
 [ "$(docker inspect -f '{{index .Config.Labels "orca.project"}}' orca-demo)" = demo ] || fail "label"
-docker volume inspect orca-demo_node_modules >/dev/null || fail "node_modules volume"
+[ "$(mount_of orca-demo /workspace/node_modules)" = "" ] || fail "node_modules is part of the project folder"
 
 step "start again resumes it"
 in_tty start "$T/dev/demo" | tee out.txt

@@ -93,6 +93,7 @@ export function fakeDocker(state: FakeState) {
       }
       if (cmd === "volume" && rest[0] === "inspect") return state.volumes.includes(rest[1]) ? ok("[]") : fail("no such volume");
       if (cmd === "volume" && rest[0] === "rm") {
+        if (!state.volumes.includes(rest[1])) return fail("no such volume");
         state.volumes = state.volumes.filter((v) => v !== rest[1]);
         return ok();
       }

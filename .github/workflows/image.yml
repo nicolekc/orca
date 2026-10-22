@@ -92,8 +92,8 @@ jobs:
         if: env.CHANGED == 'true' && github.event_name == 'pull_request'
         run: |
           home=$(mktemp -d) && chmod 777 "$home"
-          docker run --rm -v "$home:/home/node" -v orca-check-node-modules:/workspace/node_modules \
-            -v "$PWD/.github:/check:ro" orca-check bash /check/check-image.sh
+          docker run --rm -v "$home:/home/node" -v "$PWD/.github:/check:ro" \
+            orca-check bash /check/check-image.sh
       - name: Save digest
         if: env.CHANGED == 'true' && github.event_name != 'pull_request'
         run: |
