@@ -1,6 +1,6 @@
 # The orca command (cli/): tests on every pull request and push; an end-to-end run against
-# real Docker; and on main, builds for every platform published to the rolling "cli"
-# release, which cli/install.sh and `orca update` download from.
+# real Docker; and on main, builds for every platform published as a release of their own,
+# cli-<commit>, marked latest, which cli/install.sh and `orca update` download from.
 name: CLI
 
 on:
@@ -45,10 +45,23 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install dist
-      - name: Publish to the cli release
+      # A draft until every file is up, then latest: a download reads `version` from the
+      # latest release and fetches the rest from that same one, so it never mixes two builds.
+      # (GitHub has one latest per repo; anything else this repo releases should pass --latest=false.)
+      - name: Publish as the latest release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view cli >/dev/null 2>&1 || gh release create cli --target "$GITHUB_SHA" --latest=false \
-            --title "orca command" --notes "Builds of the orca command from main, replaced on every push. \`version\` names the commit. Install: cli/install.sh"
-          gh release upload cli dist/orca-* dist/version --clobber
+          tag="cli-$(cat dist/version)"
+          gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true   # a re-run of this commit
+          gh release create "$tag" dist/orca-* dist/version --draft --target "$GITHUB_SHA" \
+            --title "orca $(cat dist/version)" --notes "The orca command, built from $GITHUB_SHA. Install: cli/install.sh"
+          gh release edit "$tag" --draft=false --latest
+      # The few before it stay, for downloads already under way
+      - name: Remove older releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 100 --json tagName,createdAt \
+            -q '[.[] | select(.tagName | startswith("cli-"))] | sort_by(.createdAt) | reverse | .[5:][] | .tagName' |
+            while read -r tag; do gh release delete "$tag" --yes --cleanup-tag; done
