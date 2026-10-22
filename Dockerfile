@@ -74,11 +74,15 @@ RUN git config --system user.name "claude-bot" \
 # changes the minor version, uv rebuilds the .venv on the next `uv run`.
 #
 # Default Python minor version (patch updates come with each rebuild). Projects can ask for
-# another with .python-version or requires-python; uv downloads it into their home.
+# another with .python-version or requires-python; uv downloads it next to the default, in
+# the container rather than ~ (the Mac's disk ignores letter case, and Python's files don't),
+# and again when needed after a recreate. The default stays root-owned, so pip can't change it.
 ARG PYTHON_VERSION=3.14
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh \
     && UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/usr/local/bin \
-       uv python install "$PYTHON_VERSION" --default
+       uv python install "$PYTHON_VERSION" --default \
+    && mkdir -p /opt/uv/bin && chown node:node /opt/uv/python /opt/uv/bin
+ENV UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/bin
 
 # ── Agent CLIs ──────────────────────────────────────────────────────────────────────────
 # Claude Code: Anthropic's native installer (code.claude.com/docs/en/setup), which keeps
@@ -104,7 +108,7 @@ RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
 ENV NPM_CONFIG_PREFIX=/home/node/.local \
     PNPM_HOME=/home/node/.local/share/pnpm \
     PIP_BREAK_SYSTEM_PACKAGES=1
-ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/claude/.local/bin:$PATH"
+ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/uv/bin:/opt/claude/.local/bin:$PATH"
 
 # What every session should know about the container, read by Claude in every project
 COPY image/environment.md /etc/claude-code/CLAUDE.md
