@@ -28,7 +28,8 @@ export const volumeName = (container: string) => `${container}_node_modules`;
 
 export function readFolder(ctx: Context, name: string): string | null {
   const file = join(recordDir(ctx, name), "project-path");
-  return existsSync(file) ? readFileSync(file, "utf8").trim() || null : null;
+  // Without a trailing slash, to match the folders Docker reports
+  return existsSync(file) ? readFileSync(file, "utf8").trim().replace(/(.)\/+$/, "$1") || null : null;
 }
 
 export async function loadProjects(ctx: Context): Promise<Project[]> {
@@ -53,10 +54,19 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
     };
   });
 
-  // Pre-migration containers whose folder has no record yet
-  for (const c of containers) {
-    if (c.home || !c.workspace || projects.some((p) => p.legacy === c)) continue;
-    projects.push({ name: basename(c.workspace), folder: c.workspace, managed: false, container: null, legacy: c, outdated: false });
+  // Pre-migration containers whose folder has no record yet, one per folder (the most
+  // recently used). Named after the folder, or the container when that name is taken, since
+  // names identify projects everywhere.
+  const unrecorded = containers
+    .filter((c) => !c.home && c.workspace && !projects.some((p) => p.legacy === c))
+    .sort((a, b) => b.startedAt - a.startedAt);
+  for (const c of unrecorded) {
+    if (projects.some((p) => p.folder === c.workspace)) continue;
+    const taken = (n: string) => projects.some((p) => p.name === n);
+    let name = basename(c.workspace!);
+    if (taken(name)) name = c.name;
+    for (let i = 2; taken(name); i++) name = `${c.name}-${i}`;
+    projects.push({ name, folder: c.workspace, managed: false, container: null, legacy: c, outdated: false });
   }
 
   const lastUsed = (p: Project) => Math.max(p.container?.startedAt ?? 0, p.legacy?.startedAt ?? 0);

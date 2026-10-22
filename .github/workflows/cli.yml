@@ -16,6 +16,17 @@ env:
   BUN_VERSION: 1.4.3
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      cli: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: .github/changed.sh cli package.json bun.lock bunfig.toml tsconfig.json Makefile .github/workflows/cli.yml
+
   test:
     runs-on: ubuntu-24.04
     steps:
@@ -24,7 +35,8 @@ jobs:
       - run: make install check
 
   e2e:
-    needs: test
+    needs: [changes, test]
+    if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -35,8 +47,8 @@ jobs:
       - run: bash cli/test/e2e.sh dist/orca-linux-x64
 
   release:
-    if: github.event_name == 'push'
-    needs: [test, e2e]
+    if: github.event_name == 'push' && needs.changes.outputs.cli == 'true'
+    needs: [changes, test, e2e]
     runs-on: ubuntu-24.04
     permissions:
       contents: write   # replacing the release's files

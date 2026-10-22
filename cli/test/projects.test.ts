@@ -95,3 +95,31 @@ test("docker not running is reported with how to fix it", async () => {
   };
   await expect(loadProjects(t.ctx)).rejects.toMatchObject({ message: expect.stringContaining("Docker isn't running") });
 });
+
+test("several pre-migration containers on one folder are one project, the most recently used", async () => {
+  const { ctx } = fakeContext({
+    containers: [
+      { name: "ralph-old", workspace: "/Users/me/dev/old", startedAt: "2026-01-01T00:00:00Z" },
+      { name: "old-copy", workspace: "/Users/me/dev/old", startedAt: "2026-06-01T00:00:00Z" },
+    ],
+  });
+  const projects = await loadProjects(ctx);
+  expect(projects.map((p) => [p.name, p.legacy?.name])).toEqual([["old", "old-copy"]]);
+});
+
+test("a pre-migration container on another folder of the same name gets its container's name", async () => {
+  const t = fakeContext();
+  record(t.ctx.orcaDir, "gepa", "/Users/me/dev/gepa");
+  t.state.containers.push({ name: "ralph-gepa", workspace: "/Users/me/old/gepa" });
+  const names = (await loadProjects(t.ctx)).map((p) => p.name).sort();
+  expect(names).toEqual(["gepa", "ralph-gepa"]);
+});
+
+test("a record whose folder ends in a slash still finds its pre-migration container", async () => {
+  const t = fakeContext();
+  record(t.ctx.orcaDir, "app", "/Users/me/dev/app/");
+  t.state.containers.push({ name: "ralph-app", workspace: "/Users/me/dev/app" });
+  const projects = await loadProjects(t.ctx);
+  expect(projects).toHaveLength(1);
+  expect(projects[0].legacy?.name).toBe("ralph-app");
+});
