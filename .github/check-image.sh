@@ -23,6 +23,8 @@ npm install -g --silent cowsay && test "$(command -v cowsay)" = "$HOME/.local/bi
 touch /workspace/node_modules/.check
 yarn global add --silent yosay && test "$(command -v yosay)" = "$HOME/.local/bin/yosay"
 pnpm add -g http-server && test "$(command -v http-server)" = "$HOME/.local/share/pnpm/bin/http-server"
+# Other Python versions go in the container, where letter case is kept, not the home
+test "$(uv python dir)" = /opt/uv/python && test -w /opt/uv/python
 uv tool install -q pycowsay && test "$(command -v pycowsay)" = "$HOME/.local/bin/pycowsay"
 python3 -m pip install -q six && python3 -c 'import six, os; assert six.__file__.startswith(os.path.expanduser("~/.local/"))'
 
