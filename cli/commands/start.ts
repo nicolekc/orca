@@ -8,6 +8,7 @@ import {
   inspectImage,
   latestImage,
   listContainers,
+  migrated,
   readFolder,
   recordDir,
   volumeName,
@@ -41,10 +42,14 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
   claimRecord(ctx, name, folder);
 
   const legacy = containers.find((c) => !c.home && c.workspace === folder);
-  if (legacy && !existing && isEmpty(home))
+  if (legacy && !existing && !migrated(ctx, name))
     throw new OrcaError(
-      `${tilde(ctx, folder)} still has its container from before project homes, ${legacy.name}. Starting now would begin with an empty home.`,
-      `Migrate it first: ~/orca/orca-migrate.sh ${tilde(ctx, folder)}`,
+      isEmpty(home)
+        ? `${tilde(ctx, folder)} still has its container from before project homes, ${legacy.name}. Starting now would begin with an empty home.`
+        : `${tilde(ctx, folder)}'s migration from ${legacy.name} didn't finish, so its home may be incomplete.`,
+      isEmpty(home)
+        ? `Migrate it first: ~/orca/orca-migrate.sh ${tilde(ctx, folder)}`
+        : `Remove the partial copy and migrate again: rm -r ${tilde(ctx, home)} && ~/orca/orca-migrate.sh ${tilde(ctx, folder)}`,
     );
 
   const other = containers.find((c) => c.running && c.name !== container && c.workspace === folder);

@@ -52,7 +52,8 @@ type Inspected = {
 };
 
 export function parseContainer(c: Inspected): Container {
-  const mount = (dest: string) => c.Mounts.find((m) => m.Destination === dest)?.Source ?? null;
+  // Docker Desktop sometimes reports Mac folders from inside its VM, as /host_mnt/Users/…
+  const mount = (dest: string) => c.Mounts.find((m) => m.Destination === dest)?.Source.replace(/^\/host_mnt(?=\/)/, "") ?? null;
   const started = Date.parse(c.State.StartedAt);
   return {
     name: c.Name.replace(/^\//, ""),

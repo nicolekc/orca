@@ -55,7 +55,7 @@ test("a pre-migration container with no record shows up as not migrated", async 
   expect(p.legacy?.name).toBe("ralph-old");
 });
 
-test("a pre-migration container is attached to the migrated project on the same folder", async () => {
+test("a migrated project's old container is a backup: one project, not reported as needing migration", async () => {
   const t = fakeContext();
   const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
   t.state.containers.push(
@@ -65,7 +65,35 @@ test("a pre-migration container is attached to the migrated project on the same 
   const projects = await loadProjects(t.ctx);
   expect(projects).toHaveLength(1);
   expect(projects[0].container?.name).toBe("orca-app");
-  expect(projects[0].legacy?.name).toBe("ralph-app");
+  expect(projects[0].legacy).toBeNull();
+});
+
+test("a project migrated but not started yet isn't reported as needing migration", async () => {
+  const t = fakeContext();
+  const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
+  writeFileSync(join(dir, "migrated-from"), "ralph-app\n");
+  t.state.containers.push({ name: "ralph-app", workspace: "/Users/me/dev/app" });
+  const projects = await loadProjects(t.ctx);
+  expect(projects).toHaveLength(1);
+  expect(projects[0].legacy).toBeNull();
+});
+
+test("a migration that failed partway still needs migrating", async () => {
+  const t = fakeContext();
+  const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
+  writeFileSync(join(dir, "home/.bashrc"), "");
+  t.state.containers.push({ name: "ralph-app", workspace: "/Users/me/dev/app" });
+  const [p] = await loadProjects(t.ctx);
+  expect(p.legacy?.name).toBe("ralph-app");
+});
+
+test("Docker Desktop's /host_mnt prefix doesn't hide a project's container", async () => {
+  const t = fakeContext();
+  const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
+  t.state.containers.push({ name: "orca-app", running: true, workspace: "/host_mnt/Users/me/dev/app", home: "/host_mnt" + join(dir, "home") });
+  const [p] = await loadProjects(t.ctx);
+  expect(p.container?.name).toBe("orca-app");
+  expect(p.folder).toBe("/Users/me/dev/app");
 });
 
 test("a container is out of date when orca:latest is a different image", async () => {

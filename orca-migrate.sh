@@ -90,6 +90,8 @@ docker export "$OLD" | run_helper copy-home.sh "$HOME_DIR:/dest"
 
 echo "🔍 Checking the copy against $OLD"
 docker export "$OLD" | run_helper verify-home.sh "$HOME_DIR:/dest:ro"
+# orca treats the project as migrated only once this exists
+echo "$OLD" > "$PROJECT_DIR/migrated-from"
 
 echo ""
 if [ -d "$LOOKUP" ]; then
