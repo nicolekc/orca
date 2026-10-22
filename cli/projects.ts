@@ -15,7 +15,11 @@ export type Project = {
   managed: boolean;
   /** The project's container, if one exists */
   container: Container | null;
-  /** A container from before project homes existed, on the same folder (needs orca-migrate.sh) */
+  /**
+   * A container from before project homes existed, on the same folder, while it still needs
+   * orca-migrate.sh. Once the project's home has been copied, the old container is only a
+   * backup and isn't reported.
+   */
   legacy: Container | null;
   /** The container was made from an older image than orca:latest */
   outdated: boolean;
@@ -43,7 +47,8 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
     const folder = readFolder(ctx, name);
     const home = homeDir(ctx, name);
     const container = containers.find((c) => c.home === home) ?? null;
-    const legacy = containers.find((c) => !c.home && c.workspace !== null && c.workspace === folder) ?? null;
+    const old = containers.find((c) => !c.home && c.workspace !== null && c.workspace === folder) ?? null;
+    const legacy = old && !container && isEmpty(home) ? old : null;
     return {
       name,
       folder,
@@ -58,7 +63,7 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
   // recently used). Named after the folder, or the container when that name is taken, since
   // names identify projects everywhere.
   const unrecorded = containers
-    .filter((c) => !c.home && c.workspace && !projects.some((p) => p.legacy === c))
+    .filter((c) => !c.home && c.workspace)
     .sort((a, b) => b.startedAt - a.startedAt);
   for (const c of unrecorded) {
     if (projects.some((p) => p.folder === c.workspace)) continue;
@@ -72,6 +77,8 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
   const lastUsed = (p: Project) => Math.max(p.container?.startedAt ?? 0, p.legacy?.startedAt ?? 0);
   return projects.sort((a, b) => lastUsed(b) - lastUsed(a) || a.name.localeCompare(b.name));
 }
+
+const isEmpty = (dir: string) => !existsSync(dir) || readdirSync(dir).length === 0;
 
 export async function listContainers(ctx: Context): Promise<Container[]> {
   const ids = await docker(ctx, ["ps", "-a", "-q"]);
