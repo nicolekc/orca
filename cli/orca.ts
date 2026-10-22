@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { render } from "ink";
 import { createElement } from "react";
@@ -14,6 +15,7 @@ import { loadProjects } from "./projects";
 import { serve } from "./server/serve";
 import { projectAt } from "./proxy";
 import { Picker, type Choice } from "./ui/picker";
+import { quietConsole } from "./ui/quiet";
 
 const HELP = `orca: each project in its own container, with its own home
 
@@ -112,8 +114,13 @@ async function pick(ctx: Context): Promise<number> {
   const projects = await loadProjects(ctx);
   if (!ctx.ask) return list(ctx, {}).then(() => 0);
   let choice = { action: "quit" } as Choice;
-  const app = render(createElement(Picker, { projects, home: ctx.home, onChoose: (c: Choice) => (choice = c) }));
-  await app.waitUntilExit();
+  const restore = quietConsole(join(ctx.orcaDir, "orca.log"));
+  try {
+    const app = render(createElement(Picker, { projects, home: ctx.home, onChoose: (c: Choice) => (choice = c) }), { patchConsole: false });
+    await app.waitUntilExit();
+  } finally {
+    restore();
+  }
 
   switch (choice.action) {
     case "start": {

@@ -4,7 +4,9 @@
 # Builds reuse unchanged layers from a cache kept in the registry (:buildcache-<arch>), so a
 # rebuild yields the same layers and a pull downloads only what changed. The monthly run
 # (and a manual run with "fresh") rebuilds everything, picking up new tool versions.
-# Pull requests build and check the image without publishing it.
+# Pull requests build and check the image without publishing it. Pushes and pull requests
+# that don't touch the image skip the build; the build jobs still run (and pass) because the
+# ruleset requires them by name.
 name: Image
 
 on:
@@ -29,7 +31,19 @@ env:
   IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: .github/changed.sh Dockerfile image .github/check-image.sh .github/workflows/image.yml
+
   build:
+    needs: changes
     strategy:
       # The repo's `main` ruleset requires these jobs by name, e.g.
       # "build (linux/amd64, amd64, ubuntu-24.04)", and the name comes from these matrix
@@ -47,16 +61,23 @@ jobs:
     permissions:
       contents: read
       packages: write   # pushing layers and the build cache (main only)
+    # Every step checks the image changed: skipping the job instead would report a single
+    # "build" check, not the per-platform ones the ruleset waits for
+    env:
+      CHANGED: ${{ needs.changes.outputs.image }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: env.CHANGED == 'true'
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        if: env.CHANGED == 'true'
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
-        if: github.event_name != 'pull_request'
+        if: env.CHANGED == 'true' && github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: build
+        if: env.CHANGED == 'true'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           platforms: ${{ matrix.platform }}
@@ -68,27 +89,27 @@ jobs:
           # by digest, and the publish job tags both as :latest together
           outputs: ${{ github.event_name == 'pull_request' && 'type=docker,name=orca-check' || format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE) }}
       - name: Check the tools work
-        if: github.event_name == 'pull_request'
+        if: env.CHANGED == 'true' && github.event_name == 'pull_request'
         run: |
           home=$(mktemp -d) && chmod 777 "$home"
           docker run --rm -v "$home:/home/node" -v orca-check-node-modules:/workspace/node_modules \
             -v "$PWD/.github:/check:ro" orca-check bash /check/check-image.sh
       - name: Save digest
-        if: github.event_name != 'pull_request'
+        if: env.CHANGED == 'true' && github.event_name != 'pull_request'
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: github.event_name != 'pull_request'
+        if: env.CHANGED == 'true' && github.event_name != 'pull_request'
         with:
           name: digest-${{ matrix.runner }}
           path: /tmp/digests/*
           retention-days: 1
 
   publish:
-    if: github.event_name != 'pull_request'
-    needs: build
+    if: github.event_name != 'pull_request' && needs.changes.outputs.image == 'true'
+    needs: [changes, build]
     runs-on: ubuntu-24.04
     permissions:
       packages: write   # tagging the published image

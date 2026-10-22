@@ -12,7 +12,8 @@ if (!platform || !outfile || !version) throw new Error("usage: bun cli/build.ts 
 const result = await Bun.build({
   entrypoints: ["cli/orca.ts"],
   compile: { target: `bun-${platform}` as Bun.Build.CompileTarget, outfile },
-  define: { ORCA_VERSION: JSON.stringify(version) },
+  // React's production build: faster, and without development warnings meant for us, not users
+  define: { ORCA_VERSION: JSON.stringify(version), "process.env.NODE_ENV": JSON.stringify("production") },
   plugins: [
     tailwind, // the dashboard's styles
     {
