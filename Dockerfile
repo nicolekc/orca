@@ -49,9 +49,16 @@ RUN npm_config_before="$(date -d '7 days ago' +%F)" npx -y playwright install-de
 
 # ── Node package managers ───────────────────────────────────────────────────────────────
 # Corepack provides pnpm and yarn at the version each project's package.json asks for,
-# downloading it without asking (an agent can't answer the prompt).
-RUN corepack enable
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# downloading it without asking (an agent can't answer the prompt). The current pnpm (about
+# 50 MB) and yarn come with the image, so a new project doesn't wait for them; other versions
+# are downloaded when a project asks, into the same folder, and again after a recreate.
+ENV COREPACK_HOME=/opt/corepack COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable \
+    && corepack install --global pnpm@latest yarn@stable \
+    # pnpm fetches its native binary on first run, giving up after 30 s; try a few times
+    && for try in 1 2 3; do pnpm --version && break; [ "$try" = 3 ] && exit 1; done \
+    && yarn --version \
+    && chown -R node:node /opt/corepack
 
 # ── Container user ──────────────────────────────────────────────────────────────────────
 ARG USERNAME=node
@@ -95,7 +102,7 @@ RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
 #                                          it can't be changed. Inside a .venv, as usual.)
 #   claude updates       ~/.local          (Claude's default; see Agent CLIs)
 #   gh extension install ~/.local/share/gh (gh's default)
-# Caches (npm, uv, corepack, Playwright browsers) are in ~/.cache by default.
+# Caches (npm, uv, Playwright browsers) are in ~/.cache by default; corepack's are in the image.
 # Only system packages (sudo apt install) stay in the container; add lasting ones above.
 ENV NPM_CONFIG_PREFIX=/home/node/.local \
     PNPM_HOME=/home/node/.local/share/pnpm \

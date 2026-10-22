@@ -10,8 +10,9 @@ git config user.name
 gcc --version | head -1
 ffmpeg -version | head -1
 node --version
-pnpm --version
-yarn --version
+# Come with the image: no download on first use
+COREPACK_ENABLE_NETWORK=0 pnpm --version
+COREPACK_ENABLE_NETWORK=0 yarn --version
 python3 --version
 uv --version
 
