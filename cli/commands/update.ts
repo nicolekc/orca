@@ -18,10 +18,11 @@ export type SelfUpdate = { version: string; execPath: string; fetch: typeof fetc
 
 export async function update(ctx: Context, opts: { self: SelfUpdate | false }): Promise<void> {
   const before = (await latestImage(ctx))?.id;
-  const pulled = await ctx.docker.run(["pull", REMOTE_IMAGE]);
-  if (pulled.code !== 0) {
+  ctx.print(`Image: checking ${REMOTE_IMAGE}…`);
+  // In the terminal, so Docker shows its download progress
+  if ((await ctx.docker.attach(["pull", REMOTE_IMAGE])) !== 0) {
     await docker(ctx, ["version"]); // turns "Docker isn't running" into its own message
-    throw new OrcaError(`Couldn't download ${REMOTE_IMAGE}: ${pulled.stderr.trim()}`, "If the image is private: gh auth token | docker login ghcr.io -u <github-user> --password-stdin");
+    throw new OrcaError(`Couldn't download ${REMOTE_IMAGE} (Docker's message is above).`, "If the image is private: gh auth token | docker login ghcr.io -u <github-user> --password-stdin");
   }
   await docker(ctx, ["tag", REMOTE_IMAGE, "orca:latest"]);
   const after = (await latestImage(ctx))?.id;
@@ -47,7 +48,7 @@ async function updateSelf(ctx: Context, s: SelfUpdate) {
     return;
   }
   ctx.print(`orca: downloading ${latest} (about 70 MB; GitHub can take a minute)…`);
-  const binary = new Uint8Array(await (await get(`download/cli-${latest}/${asset}`)).arrayBuffer());
+  const binary = await download(await get(`download/cli-${latest}/${asset}`));
   const expected = (await (await get(`download/cli-${latest}/${asset}.sha256`)).text()).trim().split(/\s+/)[0];
   const actual = new Bun.CryptoHasher("sha256").update(binary).digest("hex");
   if (actual !== expected) throw new OrcaError(`The downloaded orca doesn't match its published checksum; not installing it.`);
@@ -61,4 +62,20 @@ async function updateSelf(ctx: Context, s: SelfUpdate) {
     throw new OrcaError(`Can't replace ${s.execPath}.`, `Reinstall it: curl -fsSL https://raw.githubusercontent.com/nicolekc/orca/main/cli/install.sh | bash`);
   }
   ctx.print(`orca: updated (${s.version} → ${latest}).`);
+}
+
+/** Reads a download, showing how far along it is when there's a terminal to show it in. */
+async function download(r: Response): Promise<Uint8Array> {
+  const total = Number(r.headers.get("content-length")) || 0;
+  const show = process.stderr.isTTY && total > 0 && r.body;
+  if (!show) return new Uint8Array(await r.arrayBuffer());
+  const chunks: Uint8Array[] = [];
+  let done = 0;
+  for await (const chunk of r.body!) {
+    chunks.push(chunk);
+    done += chunk.length;
+    process.stderr.write(`\r  ${Math.floor((done / total) * 100)}% of ${Math.round(total / 1e6)} MB`);
+  }
+  process.stderr.write("\n");
+  return Buffer.concat(chunks);
 }

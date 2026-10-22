@@ -118,7 +118,8 @@ test("delete leaves pre-migration containers to the migration", async () => {
 test("update pulls the published image and names it orca:latest", async () => {
   const t = fakeContext({ latest: "sha256:old", pulled: "sha256:new" });
   await update(t.ctx, { self: false });
-  expect(t.calls).toContainEqual(["pull", "ghcr.io/nicolekc/orca:latest"]);
+  // In the terminal, to show its progress
+  expect(t.attached).toContainEqual(["pull", "ghcr.io/nicolekc/orca:latest"]);
   expect(t.calls).toContainEqual(["tag", "ghcr.io/nicolekc/orca:latest", "orca:latest"]);
   expect(t.output()).toContain("updated");
 });
