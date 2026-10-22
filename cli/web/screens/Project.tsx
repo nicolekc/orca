@@ -83,7 +83,7 @@ function ImageUpdate({ p }: { p: ProjectDetail }) {
       </p>
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 text-muted-foreground">
         <dt>Kept</dt>
-        <dd>the project folder, ~ (logins, memory, settings, installed tools), node_modules</dd>
+        <dd>the project folder, ~ (logins, memory, settings, installed tools)</dd>
         <dt>Reset</dt>
         <dd>everything else in the container, such as system packages</dd>
       </dl>
@@ -212,7 +212,7 @@ function Danger({ p }: { p: ProjectDetail }) {
           <form onSubmit={submit} className="grid gap-4">
             <DialogHeader>
               <DialogTitle>Delete {p.name}?</DialogTitle>
-              <DialogDescription>This removes the container and its node_modules. Your code in {p.folder} stays.</DialogDescription>
+              <DialogDescription>This removes the container. Your code in {p.folder} stays.</DialogDescription>
             </DialogHeader>
             <label className="flex items-start gap-2 text-sm">
               <Checkbox checked={home} onCheckedChange={(v) => setHome(v === true)} className="mt-0.5" />

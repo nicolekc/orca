@@ -66,6 +66,9 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
       throw new OrcaError(`${container} is running.`, `Exit every session in it first, or: docker stop ${container}`);
     ctx.print(`Removing ${container} to recreate it (--fresh)`);
     await docker(ctx, ["rm", container]);
+    // Containers made before node_modules moved into the project folder had a volume for it
+    if ((await ctx.docker.run(["volume", "rm", volumeName(container)])).code === 0)
+      ctx.print("  Its node_modules is now the project folder's: install dependencies again if they're missing.");
   } else if (existing) {
     await noticeOutdated(ctx, existing.image, folder);
     if (opts.command) {
@@ -88,7 +91,6 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
     "--memory=8g", "--cpus=4",
     "--network", network,
     "-v", `${folder}:/workspace`,
-    "-v", `${volumeName(container)}:/workspace/node_modules`,
     "-v", `${home}:/home/node`,
     "orca:latest", "bash",
   ];
@@ -132,7 +134,7 @@ async function noticeOutdated(ctx: Context, used: string, folder: string) {
       : "Image update available: this container was made from an older orca image.",
   );
   ctx.print(`  To switch, exit and run:  orca start --fresh ${tilde(ctx, folder)}`);
-  ctx.print(`  Kept:  the project folder, ~ (logins, memory, settings, installed tools), node_modules`);
+  ctx.print(`  Kept:  the project folder, ~ (logins, memory, settings, installed tools)`);
   ctx.print(`  Reset: everything else in the container, such as system packages`);
   ctx.print();
 }

@@ -7,7 +7,8 @@ import { allForwards, networkName, PROXY, syncProxy } from "../proxy";
 export type DeleteOptions = { home?: boolean; yes?: boolean };
 
 /**
- * Removes a project's container and its node_modules volume; with --home, also its home.
+ * Removes a project's container (and the node_modules volume older containers had); with
+ * --home, also its home.
  * Never touches the project's code.
  */
 export async function del(ctx: Context, name: string, opts: DeleteOptions): Promise<void> {
