@@ -19,8 +19,6 @@ uv --version
 # Each package manager's installs land in the home, without sudo, with commands on PATH
 npm install -g --silent cowsay && test "$(command -v cowsay)" = "$HOME/.local/bin/cowsay"
 
-# A project's new node_modules volume is writable without sudo
-touch /workspace/node_modules/.check
 yarn global add --silent yosay && test "$(command -v yosay)" = "$HOME/.local/bin/yosay"
 pnpm add -g http-server && test "$(command -v http-server)" = "$HOME/.local/share/pnpm/bin/http-server"
 # Other Python versions go in the container, where letter case is kept, not the home

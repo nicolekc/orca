@@ -10,7 +10,7 @@ function folder(home: string, name = "app") {
   return dir;
 }
 
-test("a new folder gets a record and a container with its folder, home and node_modules", async () => {
+test("a new folder gets a record and a container with its folder and home", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
   await start(t.ctx, dir, {});
@@ -21,7 +21,8 @@ test("a new folder gets a record and a container with its folder, home and node_
   expect(run.slice(0, 4)).toEqual(["run", "-it", "--name", "orca-app"]);
   expect(run).toContain("orca.project=app");
   expect(run).toContain(`${dir}:/workspace`);
-  expect(run).toContain("orca-app_node_modules:/workspace/node_modules");
+  // node_modules is the project folder's own, like everything else in it
+  expect(run.some((a) => a.includes("node_modules"))).toBe(false);
   expect(run).toContain(`${join(record, "home")}:/home/node`);
   expect(run.slice(-2)).toEqual(["orca:latest", "bash"]);
 });
@@ -78,6 +79,16 @@ test("--fresh recreates a stopped container", async () => {
   await start(t.ctx, dir, { fresh: true });
   expect(t.calls).toContainEqual(["rm", "orca-app"]);
   expect(t.attached[1][0]).toBe("run");
+  expect(t.output()).not.toContain("install dependencies again");
+});
+
+test("--fresh on a container from before node_modules moved removes its old volume", async () => {
+  const t = fakeContext({ volumes: ["orca-app_node_modules"] });
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  await start(t.ctx, dir, { fresh: true });
+  expect(t.state.volumes).toHaveLength(0);
+  expect(t.output()).toContain("install dependencies again");
 });
 
 test("--fresh refuses while the container is running", async () => {

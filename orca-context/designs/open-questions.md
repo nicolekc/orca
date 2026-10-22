@@ -7,4 +7,5 @@ Decisions deliberately postponed. Check here before working on the related area.
 - [Overlap with herdr](herdr.md): what to build versus reuse for viewing many agent sessions.
 - [Agent messaging](agent-messaging.md): letting agents in different projects talk, without giving up isolation by default.
 - [GitHub bot identity](github-bot-identity.md): letting Claude comment and review on GitHub as itself while commits stay the user's.
-- [The node_modules volume](node-modules-volume.md): why it's a named volume, and whether builds should be shared between the Mac and the container.
+- [Devcontainers](devcontainers.md): moving container definition to the devcontainer spec, and opening projects in VS Code.
+- [The node_modules volume](node-modules-volume.md): decided, no volume; the costs accepted and when to revisit.
