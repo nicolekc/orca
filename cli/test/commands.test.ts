@@ -139,9 +139,10 @@ test("update failing to pull says how to log in", async () => {
 function selfUpdate(t: ReturnType<typeof fakeContext>, files: Record<string, string>, version = "aaa") {
   const execPath = join(t.home, "orca");
   writeFileSync(execPath, "old binary");
+  // files are keyed by their path under the repo's releases
   const fetch = (async (url: string) => {
-    const name = String(url).split("/").pop()!;
-    return name in files ? new Response(files[name]) : new Response("", { status: 404 });
+    const path = String(url).replace("https://github.com/nicolekc/orca/releases/", "");
+    return path in files ? new Response(files[path]) : new Response("", { status: 404 });
   }) as unknown as typeof globalThis.fetch;
   return { execPath, opts: { version, execPath, fetch, platform: "darwin", arch: "arm64" } };
 }
@@ -150,7 +151,11 @@ const sha = (s: string) => new Bun.CryptoHasher("sha256").update(s).digest("hex"
 
 test("update replaces orca with the published build after checking its checksum", async () => {
   const t = fakeContext();
-  const s = selfUpdate(t, { version: "bbb\n", "orca-darwin-arm64": "new binary", "orca-darwin-arm64.sha256": `${sha("new binary")}  orca-darwin-arm64\n` });
+  const s = selfUpdate(t, {
+    "latest/download/version": "bbb\n",
+    "download/cli-bbb/orca-darwin-arm64": "new binary",
+    "download/cli-bbb/orca-darwin-arm64.sha256": `${sha("new binary")}  orca-darwin-arm64\n`,
+  });
   await update(t.ctx, { self: s.opts });
   expect(readFileSync(s.execPath, "utf8")).toBe("new binary");
   expect(t.output()).toContain("aaa → bbb");
@@ -158,14 +163,18 @@ test("update replaces orca with the published build after checking its checksum"
 
 test("update refuses a build whose checksum doesn't match", async () => {
   const t = fakeContext();
-  const s = selfUpdate(t, { version: "bbb", "orca-darwin-arm64": "tampered", "orca-darwin-arm64.sha256": sha("new binary") });
+  const s = selfUpdate(t, {
+    "latest/download/version": "bbb",
+    "download/cli-bbb/orca-darwin-arm64": "tampered",
+    "download/cli-bbb/orca-darwin-arm64.sha256": sha("new binary"),
+  });
   await expect(update(t.ctx, { self: s.opts })).rejects.toMatchObject({ message: expect.stringContaining("checksum") });
   expect(readFileSync(s.execPath, "utf8")).toBe("old binary");
 });
 
 test("update leaves orca alone when it's current, or running from source", async () => {
   const t = fakeContext();
-  const s = selfUpdate(t, { version: "aaa" });
+  const s = selfUpdate(t, { "latest/download/version": "aaa" });
   await update(t.ctx, { self: s.opts });
   await update(t.ctx, { self: { ...s.opts, version: "dev" } });
   expect(readFileSync(s.execPath, "utf8")).toBe("old binary");
