@@ -42,6 +42,7 @@ async function updateSelf(ctx: Context, s: SelfUpdate) {
     ctx.print("orca: up to date.");
     return;
   }
+  ctx.print(`orca: downloading ${latest} (about 70 MB; GitHub can take a minute)…`);
   const binary = new Uint8Array(await (await get(asset)).arrayBuffer());
   const expected = (await (await get(`${asset}.sha256`)).text()).trim().split(/\s+/)[0];
   const actual = new Bun.CryptoHasher("sha256").update(binary).digest("hex");
