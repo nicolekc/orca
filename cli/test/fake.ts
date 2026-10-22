@@ -109,7 +109,6 @@ export function fakeDocker(state: FakeState) {
         return c ? ok() : fail("No such container");
       }
       if (cmd === "exec") return ok();
-      if (cmd === "pull") return state.failPull ? fail("denied") : ok();
       if (cmd === "tag") {
         if (state.pulled) state.latest = state.pulled;
         return ok();
@@ -118,6 +117,7 @@ export function fakeDocker(state: FakeState) {
     },
     async attach(args) {
       attached.push(args);
+      if (args[0] === "pull") return state.failPull ? 1 : 0;
       return 0;
     },
   };
