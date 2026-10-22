@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { start } from "../commands/start";
 import { fakeContext } from "./fake";
 
@@ -112,6 +112,31 @@ test("a folder with a pre-migration container and no migrated home points to the
   expect(err.message).toContain("ralph-app");
   expect(err.fix).toContain("orca-migrate.sh");
   expect(t.attached).toHaveLength(0);
+});
+
+test("a migration that didn't finish is refused, with how to redo it", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "ralph-app", workspace: dir });
+  const home = join(t.ctx.orcaDir, "projects", basename(dir), "home");
+  mkdirSync(home, { recursive: true });
+  writeFileSync(join(home, ".bashrc"), "");
+  const err = await start(t.ctx, dir, {}).catch((e) => e);
+  expect(err.message).toContain("didn't finish");
+  expect(err.fix).toContain("rm -r");
+  expect(t.attached).toHaveLength(0);
+});
+
+test("a finished migration starts the new container", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "ralph-app", workspace: dir });
+  const record = join(t.ctx.orcaDir, "projects", basename(dir));
+  mkdirSync(join(record, "home"), { recursive: true });
+  writeFileSync(join(record, "home/.bashrc"), "");
+  writeFileSync(join(record, "migrated-from"), "ralph-app\n");
+  await start(t.ctx, dir, {});
+  expect(t.attached).toHaveLength(1);
 });
 
 test("a missing image says to run orca update", async () => {

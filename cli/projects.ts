@@ -17,8 +17,8 @@ export type Project = {
   container: Container | null;
   /**
    * A container from before project homes existed, on the same folder, while it still needs
-   * orca-migrate.sh. Once the project's home has been copied, the old container is only a
-   * backup and isn't reported.
+   * orca-migrate.sh. Once a migration has finished (or the project has its own container),
+   * the old one is only a backup and isn't reported.
    */
   legacy: Container | null;
   /** The container was made from an older image than orca:latest */
@@ -48,7 +48,7 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
     const home = homeDir(ctx, name);
     const container = containers.find((c) => c.home === home) ?? null;
     const old = containers.find((c) => !c.home && c.workspace !== null && c.workspace === folder) ?? null;
-    const legacy = old && !container && isEmpty(home) ? old : null;
+    const legacy = old && !container && !migrated(ctx, name) ? old : null;
     return {
       name,
       folder,
@@ -78,7 +78,8 @@ export async function loadProjects(ctx: Context): Promise<Project[]> {
   return projects.sort((a, b) => lastUsed(b) - lastUsed(a) || a.name.localeCompare(b.name));
 }
 
-const isEmpty = (dir: string) => !existsSync(dir) || readdirSync(dir).length === 0;
+/** orca-migrate.sh writes migrated-from once the home it copied checks out; a failed run doesn't. */
+export const migrated = (ctx: Context, name: string) => existsSync(join(recordDir(ctx, name), "migrated-from"));
 
 export async function listContainers(ctx: Context): Promise<Container[]> {
   const ids = await docker(ctx, ["ps", "-a", "-q"]);

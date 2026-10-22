@@ -71,11 +71,20 @@ test("a migrated project's old container is a backup: one project, not reported 
 test("a project migrated but not started yet isn't reported as needing migration", async () => {
   const t = fakeContext();
   const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
-  writeFileSync(join(dir, "home/.bashrc"), "");
+  writeFileSync(join(dir, "migrated-from"), "ralph-app\n");
   t.state.containers.push({ name: "ralph-app", workspace: "/Users/me/dev/app" });
   const projects = await loadProjects(t.ctx);
   expect(projects).toHaveLength(1);
   expect(projects[0].legacy).toBeNull();
+});
+
+test("a migration that failed partway still needs migrating", async () => {
+  const t = fakeContext();
+  const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
+  writeFileSync(join(dir, "home/.bashrc"), "");
+  t.state.containers.push({ name: "ralph-app", workspace: "/Users/me/dev/app" });
+  const [p] = await loadProjects(t.ctx);
+  expect(p.legacy?.name).toBe("ralph-app");
 });
 
 test("Docker Desktop's /host_mnt prefix doesn't hide a project's container", async () => {
