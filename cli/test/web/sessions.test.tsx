@@ -12,7 +12,8 @@ test("every project's sessions, newest first, each linking to its project", asyn
   await screen.findByText("Fix login");
   const rows = screen.getAllByRole("row").slice(1);
   expect(rows.map((r) => r.textContent)).toEqual([expect.stringContaining("Add search"), expect.stringContaining("Fix login")]);
-  expect(within(rows[0]).getByRole("link", { name: "web" }).getAttribute("href")).toBe("#/p/web");
+  // The project shows in its column, or under the title on a phone: both link to it
+  expect(within(rows[0]).getAllByRole("link", { name: "web" }).map((a) => a.getAttribute("href"))).toEqual(["#/p/web", "#/p/web"]);
 });
 
 test("Resume continues a session in a terminal", async () => {
@@ -27,11 +28,18 @@ test("no sessions yet says so", async () => {
   expect(await screen.findByText("No Claude sessions in any project yet.")).toBeTruthy();
 });
 
-test("the header: where each tab goes, which is current, and the proxy and version", async () => {
+test("the header: where each tab goes, which is current, and the forwards and version", async () => {
   const { screen } = await open("/sessions", [{ name: "app" }]);
-  expect(await screen.findByText(/Forwards proxy off on 127\.0\.0\.1:7320 · test/)).toBeTruthy();
+  expect((await screen.findByRole("link", { name: "No forwards" })).getAttribute("href")).toBe("#/forwards");
+  expect(screen.getByText(/· test/)).toBeTruthy();
   expect(screen.getByRole("link", { name: "Sessions" }).getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("link", { name: "Projects" }).getAttribute("aria-current")).toBeNull();
+  expect(screen.getByRole("link", { name: "Forwards" }).getAttribute("href")).toBe("#/forwards");
+});
+
+test("forwards on record with the proxy stopped, as after a restart, say so in the header", async () => {
+  const { screen } = await open("/sessions", [{ name: "app", forwards: [3000] }, { name: "web", forwards: [5173, 8080] }]);
+  expect(await screen.findByRole("link", { name: "3 forwards · proxy stopped" })).toBeTruthy();
 });
 
 test("an action that fails shows what went wrong and how to fix it", async () => {
