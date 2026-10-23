@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { listSessions } from "../sessions";
-import { fakeContext } from "./fake";
+import { listSessions } from "../../sessions";
+import { fakeContext } from "../support/fake";
 
 const id = (n: number) => `0000000${n}-0000-0000-0000-000000000000`;
 

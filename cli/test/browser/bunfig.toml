@@ -1,0 +1,2 @@
+# The browser tests drive a real browser: no fake page (unlike the root bunfig.toml's tests)
+[test]

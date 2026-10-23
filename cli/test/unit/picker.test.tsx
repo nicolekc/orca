@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { render } from "ink-testing-library";
-import type { Project } from "../projects";
-import { Picker, type Choice } from "../ui/picker";
+import type { Project } from "../../projects";
+import { Picker, type Choice } from "../../ui/picker";
 
 const project = (name: string, extra: Partial<Project> = {}): Project => ({
   name,

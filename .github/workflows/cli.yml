@@ -39,7 +39,16 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
-      - run: make install check
+      - run: make install
+      # The browser tests' Chromium and code-server, downloaded again only when their versions change
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/.cache/orca-test
+          key: browsers-${{ hashFiles('bun.lock', 'cli/test/browser/code-server.sh') }}
+      - run: bun x playwright install-deps chromium   # the system libraries it needs
+      - run: make check
 
   e2e:
     needs: [changes, test]
@@ -49,19 +58,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install build
-      # For the browser checks: the dashboard, and the workspace file in code-server (VS Code in
-      # a browser; pinned to a release more than a week old)
-      - run: bun x playwright install --with-deps chromium
-      - run: |
-          curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --version 4.141.0 --prefix "$HOME/.local"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Get the published image
         if: needs.changes.outputs.image != 'true'
         run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest
       - name: Build this change's image (it changed the image too)
         if: needs.changes.outputs.image == 'true'
         run: docker build -t orca:latest .
-      - run: bash cli/test/e2e.sh dist/orca-linux-x64
+      - run: bash cli/test/e2e/e2e.sh dist/orca-linux-x64
 
   release:
     if: github.event_name == 'push' && needs.changes.outputs.cli == 'true'

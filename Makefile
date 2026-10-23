@@ -7,7 +7,7 @@ VERSION ?= $(shell git rev-parse --short HEAD)
 PLATFORMS := darwin-arm64 darwin-x64 linux-arm64 linux-x64
 HOST := $(shell uname -s | tr A-Z a-z)-$(subst x86_64,x64,$(subst aarch64,arm64,$(shell uname -m)))
 
-.PHONY: help install test typecheck check build dist run clean
+.PHONY: help install test browser typecheck check e2e build dist run clean
 
 help:             ## List these tasks
 	@grep -E "^[a-z]+:.*## " $(MAKEFILE_LIST) | sed -E "s/:.*## /\t/"
@@ -15,13 +15,24 @@ help:             ## List these tasks
 install:          ## Install dependencies (none newer than a week: bunfig.toml)
 	$(BUN) install --frozen-lockfile
 
-test:             ## Run the tests
+# The tests, in cli/test: unit/ and web/ (the dashboard's React code) are quick and need nothing;
+# browser/ drives Chromium (and code-server, VS Code in a browser), downloaded once; e2e/ needs
+# Docker, so it runs in CI. All but e2e run anywhere, including a project container.
+test:             ## Run the unit and React tests (seconds)
 	$(BUN) test
+
+browser: build    ## Run the browser tests: the dashboard, the compiled one, the workspace file in an editor
+	$(BUN) x playwright install chromium
+	CODE_SERVER="$$(cli/test/browser/code-server.sh)" ORCA_BIN=dist/orca-$(HOST) \
+	  $(BUN) test --config=cli/test/browser/bunfig.toml ./cli/test/browser/*.browser.ts
 
 typecheck:        ## Check types
 	$(BUN) x tsc --noEmit
 
-check: typecheck test
+check: typecheck test browser   ## Everything that runs without Docker
+
+e2e: build        ## Run the end-to-end tests against real Docker (CI): make e2e ONLY="terminals"
+	bash cli/test/e2e/e2e.sh dist/orca-$(HOST) $(ONLY)
 
 build: dist/orca-$(HOST)   ## Build orca for this machine
 

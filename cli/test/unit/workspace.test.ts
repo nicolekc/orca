@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { start } from "../commands/start";
-import { fakeContext } from "./fake";
+import { start } from "../../commands/start";
+import { fakeContext } from "../support/fake";
 
 function project(home: string, repos: string[]) {
   const dir = join(home, "dev", "app");

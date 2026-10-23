@@ -6,3 +6,7 @@ minimumReleaseAge = 604800
 # Tailwind for the dashboard when served from source (bun run); builds use cli/build.ts
 [serve.static]
 plugins = ["bun-plugin-tailwind"]
+
+# A browser-like page for the dashboard's React tests (cli/test/support/dom.ts)
+[test]
+preload = ["./cli/test/support/dom.ts"]
