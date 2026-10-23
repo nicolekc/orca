@@ -1,4 +1,5 @@
 import { del } from "../commands/delete";
+import { stop } from "../commands/stop";
 import { forward } from "../commands/forward";
 import { makeRecord } from "../commands/new";
 import { OrcaError, tilde, type Context } from "../context";
@@ -7,6 +8,7 @@ import { inspectImage, latestImage, loadProjects, type Project } from "../projec
 import { allForwards, proxyState, urlFor } from "../proxy";
 import { listSessions, type Session } from "../sessions";
 import { openInTerminal } from "../terminal";
+import { hasTerminals, listTerminals, type Terminal } from "../terminals";
 
 /** What the dashboard shows for a project. */
 export type ProjectView = {
@@ -18,7 +20,12 @@ export type ProjectView = {
   forwards: { port: number; url: string }[];
   lastUsed: number;
 };
-export type ProjectDetail = ProjectView & { sessions: Session[]; image: { container: string | null; newest: string | null } };
+export type ProjectDetail = ProjectView & {
+  sessions: Session[];
+  /** Open terminals; null when its container is from an image before terminals */
+  terminals: Terminal[] | null;
+  image: { container: string | null; newest: string | null };
+};
 export type ActionResult = { messages: string[] };
 export type ApiError = { error: string; fix?: string };
 
@@ -59,7 +66,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     if (method === "GET" && !action) {
       const latest = await latestImage(ctx);
       const container = p.container ? ((await inspectImage(ctx, p.container.image))?.created ?? null) : null;
-      return { ...view(p), sessions: listSessions(ctx, p.name), image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
+      const terminals = p.container && !hasTerminals(p.container) ? null : p.container?.running ? await listTerminals(ctx, p.container.name) : [];
+      return { ...view(p), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
     }
     const b = method === "GET" ? {} : await json(req);
 
@@ -70,14 +78,22 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
         if (typeof session !== "string" || !listSessions(ctx, p.name).some((s) => s.id === session))
           throw new OrcaError(`${p.name} has no session ${String(session)}.`);
         await openInTerminal(ctx, [opts.orca, "start", folder, "--", "claude", "--resume", session]);
-        return done(`Resuming the session in a terminal.`);
+        return done(`Resuming the session in a new terminal.`);
       }
-      await openInTerminal(ctx, [opts.orca, "start", folder]);
-      return done(`Opening ${p.name} in a terminal.`);
+      const terminal = b.terminal;
+      if (terminal !== undefined) {
+        const open = p.container?.running ? await listTerminals(ctx, p.container.name) : [];
+        if (typeof terminal !== "string" || !open.some((t) => t.name === terminal)) throw new OrcaError(`${p.name} has no open terminal ${String(terminal)}.`);
+        await openInTerminal(ctx, [opts.orca, "start", folder, "--terminal", terminal]);
+        return done(`Attaching to terminal ${terminal} in a window.`);
+      }
+      await openInTerminal(ctx, [opts.orca, "start", folder, "--new"]);
+      return done(`Opening a new terminal in ${p.name}.`);
     }
+    if (method === "POST" && action === "stop") return capture((c) => stop(c, p.name, { yes: true }));
     if (method === "POST" && action === "recreate") {
       const folder = startable(p);
-      if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Exit every session in it first, then recreate it.");
+      if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Stop it first, then recreate it.");
       await openInTerminal(ctx, [opts.orca, "start", "--fresh", folder]);
       return done(`Recreating ${p.name} in a terminal.`);
     }

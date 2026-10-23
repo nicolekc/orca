@@ -126,8 +126,8 @@ test("a new container joins its project's own network", async () => {
   const { folder } = project(t);
   await start(t.ctx, folder, {});
   expect(t.state.networks.map((n) => n.name)).toContain("orca-net-app");
-  expect(t.attached[0]).toContain("--network");
-  expect(t.attached[0]).toContain("orca-net-app");
+  expect(t.calls.find((c) => c[0] === "run")).toContain("--network");
+  expect(t.calls.find((c) => c[0] === "run")).toContain("orca-net-app");
 });
 
 test("an older container without a network is connected before it starts", async () => {
@@ -161,7 +161,8 @@ test("deleting a project removes its network", async () => {
   const t = fakeContext({ volumes: [] }, ["app"]);
   const { folder } = project(t);
   await start(t.ctx, folder, {});
-  t.state.containers.push({ name: "orca-app", workspace: folder, home: join(t.ctx.orcaDir, "projects/app/home"), networks: ["orca-net-app"] });
+  // The container start made, now stopped
+  Object.assign(t.state.containers[0], { running: false, workspace: folder, home: join(t.ctx.orcaDir, "projects/app/home"), networks: ["orca-net-app"] });
   await del(t.ctx, "app", {});
   expect(t.state.networks.map((n) => n.name)).not.toContain("orca-net-app");
 });

@@ -9,6 +9,7 @@ import { forward } from "./commands/forward";
 import { list } from "./commands/list";
 import { create } from "./commands/new";
 import { start } from "./commands/start";
+import { stop } from "./commands/stop";
 import { update, VERSION } from "./commands/update";
 import { OrcaError, realContext, type Context } from "./context";
 import { loadProjects } from "./projects";
@@ -21,14 +22,26 @@ const HELP = `orca: each project in its own container, with its own home
 
 Usage:
   orca                      pick a project and start it (interactive)
-  orca start [folder]       start or enter the container for a folder (default: this one)
+  orca start [folder]       open a terminal in a folder's container (default: this one),
+                            starting or creating it. Terminals keep running when their
+                            window closes; with any open, it asks which to attach to.
+      --new                 open a new terminal without asking
+      --terminal <name>     attach to that terminal (or open it under that name)
       --fresh               recreate the container, e.g. on a newer image
-      -- <command>          run a command in it instead of a shell, e.g. -- claude --resume
+      --without <feature>   when this creates the project, leave out a feature that copies
+                            something from the Mac, e.g. git-identity (container-features.md)
+      -- <command>          run a command in a new terminal instead of a shell,
+                            e.g. -- claude --resume
+  orca stop [project]       stop a project's container (default: this folder's), after
+                            listing the terminals that ends; it also stops by itself a
+                            minute after its last terminal ends
+      --yes                 don't ask to confirm
   orca serve                open the dashboard: every project, forward and session
       --no-open             print its link instead of opening the browser
   orca new <name>           make a project, its code in ~/.orca/projects/<name>/workspace
+      --without <feature>   as for start
   orca list [--json]        list projects and their state
-  orca delete <project>     delete a project's container and node_modules
+  orca delete <project>     delete a project's container
       --home                also delete its home (logins, memory, settings)
       --yes                 don't ask to confirm
   orca forward [port]       make a port in this project's container reachable from the Mac,
@@ -50,6 +63,9 @@ async function main(all: string[]): Promise<number> {
     allowPositionals: true,
     options: {
       fresh: { type: "boolean" },
+      new: { type: "boolean" },
+      terminal: { type: "string" },
+      without: { type: "string", multiple: true },
       json: { type: "boolean" },
       home: { type: "boolean" },
       yes: { type: "boolean" },
@@ -80,9 +96,14 @@ async function main(all: string[]): Promise<number> {
       return pick(ctx);
     case "start":
       if (inner && inner.length === 0) throw new OrcaError("Nothing after --.", "orca start [folder] -- <command>");
-      return start(ctx, args[0] ?? ".", { fresh: values.fresh, command: inner });
+      return start(ctx, args[0] ?? ".", { fresh: values.fresh, command: inner, new: values.new, terminal: values.terminal, without: values.without });
+    case "stop": {
+      const project = args[0] ?? projectAt(ctx, process.cwd());
+      if (!project) throw new OrcaError("This folder isn't in a project.", "orca stop <project>");
+      return stop(ctx, project, { yes: values.yes }).then(() => 0);
+    }
     case "new":
-      return create(ctx, one("name"));
+      return create(ctx, one("name"), { without: values.without });
     case "list":
     case "ls":
       return list(ctx, { json: values.json }).then(() => 0);

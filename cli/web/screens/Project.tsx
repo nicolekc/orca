@@ -48,7 +48,7 @@ function Detail({ p }: { p: ProjectDetail }) {
         </div>
         {migrated && (
           <Button onClick={() => open.mutate({ project: p.name }, { onSuccess: notify.done, onError: notify.failed })} disabled={open.isPending}>
-            <TerminalIcon /> Open in Terminal
+            <TerminalIcon /> New terminal
           </Button>
         )}
       </div>
@@ -60,6 +60,7 @@ function Detail({ p }: { p: ProjectDetail }) {
         </div>
       )}
       {p.imageUpdate && <ImageUpdate p={p} />}
+      {migrated && <Terminals p={p} />}
       {migrated && <Forwards p={p} />}
       <Sessions p={p} />
       {migrated && <Danger p={p} />}
@@ -91,9 +92,80 @@ function ImageUpdate({ p }: { p: ProjectDetail }) {
         <Button size="sm" variant="outline" disabled={running || recreate.isPending} onClick={() => recreate.mutate(p.name, { onSuccess: notify.done, onError: notify.failed })}>
           Recreate in Terminal
         </Button>
-        {running && <span className="text-xs text-muted-foreground">Exit every session in it first.</span>}
+        {running && <span className="text-xs text-muted-foreground">Stop it first.</span>}
       </div>
     </div>
+  );
+}
+
+function Terminals({ p }: { p: ProjectDetail }) {
+  const notify = useNotify();
+  const open = useAction(actions.open);
+  const stop = useAction(actions.stop);
+  const [confirming, setConfirming] = useState(false);
+  const running = p.state === "running";
+  const terminals = p.terminals ?? [];
+  const stopNow = () => stop.mutate(p.name, { onSuccess: (r) => (notify.done(r), setConfirming(false)), onError: notify.failed });
+
+  return (
+    <Section
+      title="Terminals"
+      aside={
+        running && (
+          <Button size="sm" variant="outline" disabled={stop.isPending} onClick={() => (terminals.length ? setConfirming(true) : stopNow())}>
+            Stop container
+          </Button>
+        )
+      }
+    >
+      {p.terminals === null ? (
+        <p className="text-sm text-pretty text-muted-foreground">This container is from before terminals, so its shells end with their window. Recreate it to get them.</p>
+      ) : terminals.length === 0 ? (
+        <p className="text-sm text-muted-foreground">None open. A terminal keeps running when its window closes.</p>
+      ) : (
+        <ul className="divide-y rounded-md border text-sm">
+          {terminals.map((t) => (
+            <li key={t.name} className="flex items-center justify-between gap-4 px-3 py-2">
+              <span className="flex min-w-0 items-baseline gap-3">
+                <span className="font-mono text-xs tabular-nums">{t.name}</span>
+                <span className="truncate">{t.title ?? t.command}</span>
+              </span>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="text-xs text-muted-foreground tabular-nums">{t.attached ? "in a window" : ago(t.active)}</span>
+                <Button size="sm" variant="ghost" onClick={() => open.mutate({ project: p.name, terminal: t.name }, { onSuccess: notify.done, onError: notify.failed })}>
+                  Attach
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stop {p.name}?</DialogTitle>
+            <DialogDescription>
+              This ends {terminals.length === 1 ? "its terminal" : `its ${terminals.length} terminals`} and whatever runs in them. Claude conversations can be continued later.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="grid gap-1 text-sm">
+            {terminals.map((t) => (
+              <li key={t.name} className="truncate">
+                <span className="font-mono text-xs">{t.name}</span> {t.title ?? t.command}
+              </li>
+            ))}
+          </ul>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" disabled={stop.isPending} onClick={stopNow}>
+              Stop
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Section>
   );
 }
 
@@ -205,7 +277,7 @@ function Danger({ p }: { p: ProjectDetail }) {
         <Button size="sm" variant="outline" className="text-destructive" disabled={running} onClick={() => (setConfirm(""), setHome(false), setOpen(true))}>
           Delete…
         </Button>
-        <span className="text-xs text-muted-foreground">{running ? "Exit every session in it first." : "Your code is never deleted."}</span>
+        <span className="text-xs text-muted-foreground">{running ? "Stop it first." : "Your code is never deleted."}</span>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

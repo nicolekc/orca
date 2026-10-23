@@ -27,14 +27,23 @@ in_tty start "$T/dev/demo"
 [ "$(docker inspect -f '{{index .Config.Labels "orca.project"}}' orca-demo)" = demo ] || fail "label"
 [ "$(mount_of orca-demo /workspace/node_modules)" = "" ] || fail "node_modules is part of the project folder"
 
-step "start again resumes it"
-in_tty start "$T/dev/demo" | tee out.txt
-grep -q "Resuming demo" out.txt || fail "should resume"
+[ "$(docker inspect -f '{{.State.Running}}' orca-demo)" = true ] || fail "the container should outlive its first window"
 
-step "list shows it"
+step "start again opens a terminal in it"
+in_tty start "$T/dev/demo" | tee out.txt
+grep -q "Opening demo terminal 1" out.txt || fail "should open a terminal"
+
+step "a terminal keeps running without a window, and list shows it"
+docker exec orca-demo tmux new-session -d -s 1 sleep 600
+"$ORCA" list | tee out.txt
+grep -Eq "demo +● running, 1 terminal" out.txt || fail "list should show demo's terminal"
+"$ORCA" list --json | grep -q '"name": "demo"' || fail "list --json"
+
+step "stop says which terminals it ends, then stops"
+"$ORCA" stop demo --yes | tee out.txt
+grep -q "1  sleep" out.txt || fail "stop should list the terminal"
 "$ORCA" list | tee out.txt
 grep -Eq "demo +○ stopped" out.txt || fail "list should show demo stopped"
-"$ORCA" list --json | grep -q '"name": "demo"' || fail "list --json"
 
 step "an out-of-date container says so"
 real=$(docker image inspect -f '{{.Id}}' orca:latest)

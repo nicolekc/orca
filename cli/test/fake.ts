@@ -13,6 +13,8 @@ export type FakeContainer = {
   workspace?: string;
   home?: string;
   networks?: string[];
+  /** Open terminals, as tmux list-sessions prints them (name|attached|activity|command|host|title) */
+  terminals?: string[];
 };
 
 export type FakeNetwork = { name: string; subnet: string; labels: Record<string, string> };
@@ -24,6 +26,8 @@ export type FakeState = {
   /** id of orca:latest, or null if the image isn't there */
   latest: string | null;
   created: Record<string, string>;
+  /** Images made before terminals (no orca.terminals label) */
+  noTerminals?: string[];
   /** what `docker pull` makes orca:latest's remote tag point at */
   pulled?: string;
   failPull?: boolean;
@@ -36,6 +40,7 @@ export function fakeDocker(state: FakeState) {
   const ok = (stdout = ""): Result => ({ code: 0, stdout, stderr: "" });
   const fail = (stderr: string): Result => ({ code: 1, stdout: "", stderr });
   const find = (n: string) => state.containers.find((c) => c.name === n);
+  const imageLabels = (id: string): Record<string, string> => (state.noTerminals?.includes(id) ? {} : { "orca.terminals": "1" });
 
   function network([sub, ...a]: string[]): Result {
     const net = (n: string) => state.networks.find((x) => x.name === n);
@@ -85,7 +90,7 @@ export function fakeDocker(state: FakeState) {
         const ref = rest[rest.length - 1];
         const id = ref === "orca:latest" ? state.latest : ref;
         if (!id) return fail("No such image");
-        return ok(JSON.stringify([{ Id: id, Created: state.created[id] ?? "2026-01-01T00:00:00Z" }]));
+        return ok(JSON.stringify([{ Id: id, Created: state.created[id] ?? "2026-01-01T00:00:00Z", Config: { Labels: imageLabels(id) } }]));
       }
       if (cmd === "rm") {
         state.containers = state.containers.filter((c) => c.name !== rest[rest.length - 1]);
@@ -100,14 +105,24 @@ export function fakeDocker(state: FakeState) {
       if (cmd === "network") return network(rest);
       if (cmd === "run" && rest[0] === "-d") {
         const flag = (f: string) => rest.flatMap((a, i) => (a === f ? [rest[i + 1]] : []));
-        const labels = Object.fromEntries(flag("--label").map((l) => l.split("=") as [string, string]));
-        state.containers.push({ name: flag("--name")[0], running: true, labels, networks: [] });
+        // Like Docker, the container gets the image's labels too
+        const labels = { ...imageLabels(state.latest!), ...Object.fromEntries(flag("--label").map((l) => l.split("=") as [string, string])) };
+        state.containers.push({ name: flag("--name")[0], running: true, image: state.latest!, labels, networks: [] });
         return ok("id");
       }
       if (cmd === "start") {
         const c = find(rest[rest.length - 1]);
         if (c) c.running = true;
         return c ? ok() : fail("No such container");
+      }
+      if (cmd === "stop") {
+        const c = find(rest[rest.length - 1]);
+        if (c) c.running = false;
+        return c ? ok() : fail("No such container");
+      }
+      if (cmd === "exec" && rest.includes("list-sessions")) {
+        const c = find(rest[0]);
+        return c?.terminals?.length ? ok(c.terminals.join("\n") + "\n") : fail("no server running on /tmp/tmux-1000/default");
       }
       if (cmd === "exec") return ok();
       if (cmd === "tag") {
@@ -140,7 +155,7 @@ function inspected(c: FakeContainer) {
 }
 
 /** A context over a fresh temp folder standing in for the Mac's home. */
-export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = []) {
+export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = [], host: Record<string, string> = {}) {
   const home = mkdtempSync(join(tmpdir(), "orca-test-"));
   const full: FakeState = { containers: [], volumes: [], networks: [], latest: "sha256:new", created: {}, ...state };
   const { docker, calls, attached } = fakeDocker(full);
@@ -154,6 +169,10 @@ export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = 
     ask: answers.length ? async () => answers.shift() ?? "" : null,
     color: false,
     launch: async (argv) => void launched.push(argv),
+    host: async (argv) => {
+      const key = argv.join(" ");
+      return key in host ? { code: 0, stdout: host[key] + "\n", stderr: "" } : { code: 1, stdout: "", stderr: "" };
+    },
   };
   return { ctx, home, state: full, calls, attached, lines, launched, output: () => lines.join("\n") };
 }

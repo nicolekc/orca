@@ -2,9 +2,17 @@ import { tilde, type Context } from "../context";
 import { stateOf, symbol, IMAGE_UPDATE } from "../present";
 import { loadProjects } from "../projects";
 import { allForwards, proxyState, urlFor } from "../proxy";
+import { hasTerminals, listTerminals, type Terminal } from "../terminals";
 
 export async function list(ctx: Context, opts: { json?: boolean }): Promise<void> {
   const projects = await loadProjects(ctx);
+  const terminals = new Map<string, Terminal[]>(
+    await Promise.all(
+      projects
+        .filter((p) => p.container?.running && hasTerminals(p.container))
+        .map(async (p) => [p.name, await listTerminals(ctx, p.container!.name)] as const),
+    ),
+  );
   if (opts.json) {
     const forwards = allForwards(ctx);
     const rows = projects.map((p) => ({
@@ -13,6 +21,7 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
       state: stateOf(p),
       imageUpdate: p.outdated,
       container: p.container?.name ?? null,
+      terminals: terminals.get(p.name) ?? [],
       forwards: forwards.filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
     }));
     ctx.print(JSON.stringify(rows, null, 2));
@@ -23,9 +32,13 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
     return;
   }
   const width = Math.max(...projects.map((p) => p.name.length));
-  const stateWidth = Math.max(...projects.map((p) => stateOf(p).length)) + 2;
+  const label = (p: (typeof projects)[number]) => {
+    const n = terminals.get(p.name)?.length;
+    return `${symbol[stateOf(p)]} ${stateOf(p)}${n ? `, ${n} terminal${n === 1 ? "" : "s"}` : ""}`;
+  };
+  const stateWidth = Math.max(...projects.map((p) => label(p).length));
   for (const p of projects) {
-    const state = `${symbol[stateOf(p)]} ${stateOf(p)}`;
+    const state = label(p);
     const folder = p.folder ? tilde(ctx, p.folder) : "";
     ctx.print(`${p.name.padEnd(width)}  ${state.padEnd(stateWidth)}  ${folder}${p.outdated ? `  ${IMAGE_UPDATE}` : ""}`.trimEnd());
   }

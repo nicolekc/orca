@@ -10,62 +10,148 @@ function folder(home: string, name = "app") {
   return dir;
 }
 
-test("a new folder gets a record and a container with its folder and home", async () => {
+const T = { "orca.terminals": "1" };
+const homeOf = (t: ReturnType<typeof fakeContext>, name = "app") => join(t.ctx.orcaDir, "projects", name, "home");
+const term = (name: string, command = "bash", title = "abc123") => `${name}|0|1792722000|${command}|abc123|${title}`;
+
+test("a new folder gets a record, and a container in the background with its folder and home", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
   await start(t.ctx, dir, {});
   const record = join(t.ctx.orcaDir, "projects/app");
   expect(readFileSync(join(record, "project-path"), "utf8").trim()).toBe(dir);
   expect(existsSync(join(record, "home"))).toBe(true);
-  const run = t.attached[0];
-  expect(run.slice(0, 4)).toEqual(["run", "-it", "--name", "orca-app"]);
+  const run = t.calls.find((c) => c[0] === "run")!;
+  expect(run.slice(0, 4)).toEqual(["run", "-d", "--name", "orca-app"]);
   expect(run).toContain("orca.project=app");
   expect(run).toContain(`${dir}:/workspace`);
   // node_modules is the project folder's own, like everything else in it
   expect(run.some((a) => a.includes("node_modules"))).toBe(false);
   expect(run).toContain(`${join(record, "home")}:/home/node`);
-  expect(run.slice(-2)).toEqual(["orca:latest", "bash"]);
+  expect(run).toContain("ORCA_PROJECT=app");
+  // The image's own main process keeps it running while terminals are open
+  expect(run[run.length - 1]).toBe("orca:latest");
+  expect(t.attached[0]).toEqual(["exec", "-it", "-e", "TERM", "-e", "COLORTERM", "orca-app", "tmux", "new-session", "-A", "-s", "1"]);
 });
 
-test("a stopped container is resumed", async () => {
+test("a new home gets the Mac's git identity, and says so", async () => {
+  const t = fakeContext({}, [], { "git config --global user.name": "Ada", "git config --global user.email": "ada@example.com" });
+  await start(t.ctx, folder(t.home), {});
+  expect(readFileSync(join(homeOf(t), ".gitconfig"), "utf8")).toContain("email = ada@example.com");
+  expect(t.output()).toContain("Git identity: Ada <ada@example.com>, copied from this Mac");
+});
+
+test("--without git-identity leaves it out, and says so", async () => {
+  const t = fakeContext({}, [], { "git config --global user.name": "Ada", "git config --global user.email": "ada@example.com" });
+  await start(t.ctx, folder(t.home), { without: ["git-identity"] });
+  expect(existsSync(join(homeOf(t), ".gitconfig"))).toBe(false);
+  expect(t.output()).toContain("Git identity: left out");
+});
+
+test("an unknown feature for --without is refused", async () => {
+  const t = fakeContext();
+  await expect(start(t.ctx, folder(t.home), { without: ["gh-auth"] })).rejects.toMatchObject({ message: expect.stringContaining("gh-auth") });
+});
+
+test("a home that already has files is never given the creation features", async () => {
+  const t = fakeContext({}, [], { "git config --global user.name": "Ada", "git config --global user.email": "ada@example.com" });
+  const dir = folder(t.home);
+  mkdirSync(homeOf(t), { recursive: true });
+  writeFileSync(join(homeOf(t), ".bashrc"), "");
+  writeFileSync(join(t.ctx.orcaDir, "projects/app/project-path"), dir + "\n");
+  await start(t.ctx, dir, {});
+  expect(existsSync(join(homeOf(t), ".gitconfig"))).toBe(false);
+  expect(t.output()).not.toContain("Git identity");
+});
+
+test("a Mac without a git identity says how to set one", async () => {
+  const t = fakeContext();
+  await start(t.ctx, folder(t.home), {});
+  expect(t.output()).toContain("none on this Mac");
+});
+
+test("a stopped container is started in the background, then opens a terminal", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", labels: T, workspace: dir, home: homeOf(t) });
   await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  expect(t.calls).toContainEqual(["start", "orca-app"]);
+  expect(t.attached[0].slice(-3)).toEqual(["-A", "-s", "1"]);
+});
+
+test("with terminals open, it asks which to attach to", async () => {
+  const t = fakeContext({}, ["2"]);
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1", "claude", "Fix login"), term("2")] });
+  await start(t.ctx, dir, {});
+  expect(t.output()).toContain("2 terminals open");
+  expect(t.output()).toContain('"Fix login"');
+  expect(t.attached[0].slice(-3)).toEqual(["-A", "-s", "2"]);
+});
+
+test("answering with Enter opens a new terminal under the next free name", async () => {
+  const t = fakeContext({}, [""]);
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1"), term("3")] });
+  await start(t.ctx, dir, {});
+  expect(t.attached[0].slice(-1)).toEqual(["2"]);
+});
+
+test("--new and --terminal skip the question", async () => {
+  const t = fakeContext({}, ["1"]);
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1")] });
+  await start(t.ctx, dir, { new: true });
+  await start(t.ctx, dir, { terminal: "1" });
+  expect(t.attached.map((a) => a[a.length - 1])).toEqual(["2", "1"]);
+});
+
+test("a command runs in a new terminal", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1")] });
+  await start(t.ctx, dir, { command: ["claude", "--resume", "abc"] });
+  expect(t.attached[0].slice(-7)).toEqual(["new-session", "-s", "2", "--", "claude", "--resume", "abc"]);
+});
+
+test("a container from before terminals opens plain shells, and says how to get terminals", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, workspace: dir, home: homeOf(t) });
+  await start(t.ctx, dir, {});
+  expect(t.attached[0]).toEqual(["exec", "-it", "orca-app", "bash"]);
+  expect(t.output()).toContain("orca start --fresh");
+  t.state.containers[0].running = false;
   await start(t.ctx, dir, {});
   expect(t.attached[1]).toEqual(["start", "-ai", "orca-app"]);
 });
 
-test("a running container gets a second shell instead of sharing the first one", async () => {
-  const t = fakeContext();
-  const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", running: true, workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
-  await start(t.ctx, dir, {});
-  expect(t.attached[1]).toEqual(["exec", "-it", "orca-app", "bash"]);
-  expect(t.output()).toContain("already running");
+test("an image from before terminals makes a container whose shell is its main process", async () => {
+  const t = fakeContext({ noTerminals: ["sha256:new"] });
+  await start(t.ctx, folder(t.home), {});
+  expect(t.attached[0].slice(0, 2)).toEqual(["run", "-it"]);
+  expect(t.attached[0].slice(-2)).toEqual(["orca:latest", "bash"]);
+  expect(t.output()).toContain("orca update");
 });
 
-test("an out-of-date container says what recreating keeps and loses, then resumes", async () => {
+test("an out-of-date container says what recreating keeps and loses, then opens a terminal", async () => {
   const t = fakeContext({ latest: "sha256:new", created: { "sha256:old": "2026-09-02T09:15:00Z", "sha256:new": "2026-10-21T18:30:00Z" } });
   const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", image: "sha256:old", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  t.state.containers.push({ name: "orca-app", image: "sha256:old", labels: T, workspace: dir, home: homeOf(t) });
   await start(t.ctx, dir, {});
   const out = t.output();
   expect(out).toContain("Image update available");
   expect(out).toContain("2026-09-02");
-  expect(out).toContain("orca start --fresh");
+  expect(out).toContain("orca stop app, then orca start --fresh");
   expect(out).toMatch(/Kept:.*~/);
   expect(out).toContain("Reset:");
-  expect(t.attached[1]).toEqual(["start", "-ai", "orca-app"]);
+  expect(t.attached[0]).toContain("tmux");
 });
 
 test("the update notice leaves out build dates that can't tell the images apart", async () => {
   const t = fakeContext({ latest: "sha256:new", created: { "sha256:old": "2026-10-21T22:08:00Z", "sha256:new": "2026-10-21T22:08:30Z" } });
   const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", image: "sha256:old", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  t.state.containers.push({ name: "orca-app", image: "sha256:old", labels: T, workspace: dir, home: homeOf(t) });
   await start(t.ctx, dir, {});
   expect(t.output()).toContain("made from an older orca image");
   expect(t.output()).not.toContain("22:08");
@@ -74,11 +160,10 @@ test("the update notice leaves out build dates that can't tell the images apart"
 test("--fresh recreates a stopped container", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
+  t.state.containers.push({ name: "orca-app", labels: T, workspace: dir, home: homeOf(t) });
   await start(t.ctx, dir, { fresh: true });
   expect(t.calls).toContainEqual(["rm", "orca-app"]);
-  expect(t.attached[1][0]).toBe("run");
+  expect(t.calls.filter((c) => c[0] === "run")).toHaveLength(1);
   expect(t.output()).not.toContain("install dependencies again");
 });
 
@@ -91,12 +176,13 @@ test("--fresh on a container from before node_modules moved removes its old volu
   expect(t.output()).toContain("install dependencies again");
 });
 
-test("--fresh refuses while the container is running", async () => {
+test("--fresh refuses while the container is running, saying what stopping it ends", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", running: true, workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
-  await expect(start(t.ctx, dir, { fresh: true })).rejects.toMatchObject({ message: expect.stringContaining("running") });
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1"), term("2")] });
+  const err = await start(t.ctx, dir, { fresh: true }).catch((e) => e);
+  expect(err.message).toContain("2 terminals open");
+  expect(err.fix).toContain("orca stop app");
   expect(t.calls.some((c) => c[0] === "rm")).toBe(false);
 });
 
@@ -167,41 +253,11 @@ test("a folder name Docker can't use is reported", async () => {
   expect(err.message).toContain("my app");
 });
 
-test("a command runs in a new container, which keeps running in the background", async () => {
-  const t = fakeContext();
-  const dir = folder(t.home);
-  await start(t.ctx, dir, { command: ["claude", "--resume", "abc"] });
-  const run = t.calls.find((c) => c[0] === "run")!;
-  expect(run.slice(0, 3)).toEqual(["run", "-d", "-it"]);
-  expect(run.slice(-2)).toEqual(["orca:latest", "bash"]);
-  expect(t.attached[0]).toEqual(["exec", "-it", "orca-app", "claude", "--resume", "abc"]);
-});
-
-test("a command in a stopped container starts it in the background first", async () => {
-  const t = fakeContext();
-  const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
-  await start(t.ctx, dir, { command: ["claude"] });
-  expect(t.calls).toContainEqual(["start", "orca-app"]);
-  expect(t.attached[1]).toEqual(["exec", "-it", "orca-app", "claude"]);
-});
-
-test("a command in a running container just runs", async () => {
-  const t = fakeContext();
-  const dir = folder(t.home);
-  await start(t.ctx, dir, {});
-  t.state.containers.push({ name: "orca-app", running: true, workspace: dir, home: join(t.ctx.orcaDir, "projects/app/home") });
-  await start(t.ctx, dir, { command: ["claude"] });
-  expect(t.calls.some((c) => c[0] === "start")).toBe(false);
-  expect(t.attached[1]).toEqual(["exec", "-it", "orca-app", "claude"]);
-});
-
 test("a project made by orca new starts under its own name, not 'workspace'", async () => {
   const t = fakeContext();
   const record = join(t.ctx.orcaDir, "projects/web");
   mkdirSync(join(record, "workspace"), { recursive: true });
   writeFileSync(join(record, "project-path"), join(record, "workspace") + "\n");
   await start(t.ctx, join(record, "workspace"), {});
-  expect(t.attached[0]).toContain("orca-web");
+  expect(t.calls.find((c) => c[0] === "run")).toContain("orca-web");
 });

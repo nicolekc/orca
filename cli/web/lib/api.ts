@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ActionResult, ProjectDetail, ProjectView } from "../../server/api";
 import type { ProxyState } from "../../proxy";
 import type { Session } from "../../sessions";
+import type { Terminal } from "../../terminals";
 
-export type { ProjectDetail, ProjectView, Session };
+export type { ProjectDetail, ProjectView, Session, Terminal };
 
 export class ApiFailure extends Error {
   constructor(
@@ -44,7 +45,9 @@ export function useAction<V>(fn: (v: V) => Promise<ActionResult>) {
 const p = (name: string) => `/api/projects/${encodeURIComponent(name)}`;
 export const actions = {
   create: (name: string) => request<ActionResult>("POST", "/api/projects", { name }),
-  open: (v: { project: string; session?: string }) => request<ActionResult>("POST", `${p(v.project)}/open`, { session: v.session }),
+  open: (v: { project: string; session?: string; terminal?: string }) =>
+    request<ActionResult>("POST", `${p(v.project)}/open`, { session: v.session, terminal: v.terminal }),
+  stop: (project: string) => request<ActionResult>("POST", `${p(project)}/stop`),
   recreate: (project: string) => request<ActionResult>("POST", `${p(project)}/recreate`),
   addForward: (v: { project: string; port: string }) => request<ActionResult>("POST", `${p(v.project)}/forwards`, { port: v.port }),
   removeForward: (v: { project: string; port: number }) => request<ActionResult>("DELETE", `${p(v.project)}/forwards/${v.port}`),

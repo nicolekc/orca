@@ -22,7 +22,7 @@ export async function del(ctx: Context, name: string, opts: DeleteOptions): Prom
       `Migrate it with ~/orca/orca-migrate.sh, or remove it yourself: docker rm ${p.legacy.name}`,
     );
   if (p.container?.running)
-    throw new OrcaError(`${p.container.name} is running.`, `Exit every session in it first, or: docker stop ${p.container.name}`);
+    throw new OrcaError(`${p.container.name} is running.`, `Stop it first (this ends every terminal in it): orca stop ${name}`);
 
   const volume = p.container ? volumeName(p.container.name) : null;
   const hasVolume = volume !== null && (await ctx.docker.run(["volume", "inspect", volume])).code === 0;
