@@ -1,10 +1,9 @@
-import { Box, Text, render, useApp, useInput } from "ink";
-import { createElement, useState } from "react";
+import { Box, Text, useApp, useInput } from "ink";
+import { useState } from "react";
 import type { Option } from "../context";
-import { quietConsole } from "./quiet";
 
 /** A question answered by moving through its options with the arrow keys, as in the project list. */
-function Choose({ question, options, onChoose }: { question: string; options: Option[]; onChoose: (value: string | null) => void }) {
+export function Choose({ question, options, onChoose }: { question: string; options: Option[]; onChoose: (value: string | null) => void }) {
   const { exit } = useApp();
   const [selected, setSelected] = useState(0);
   const choose = (value: string | null) => {
@@ -33,15 +32,3 @@ function Choose({ question, options, onChoose }: { question: string; options: Op
   );
 }
 
-/** Asks on the terminal; resolves to the chosen option's value, or null if the user quit. */
-export async function chooseOnTerminal(logFile: string, question: string, options: Option[]): Promise<string | null> {
-  let value: string | null = null;
-  const restore = quietConsole(logFile);
-  try {
-    const app = render(createElement(Choose, { question, options, onChoose: (v: string | null) => (value = v) }), { patchConsole: false });
-    await app.waitUntilExit();
-  } finally {
-    restore();
-  }
-  return value;
-}
