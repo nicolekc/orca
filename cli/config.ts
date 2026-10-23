@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { OrcaError, tilde, type Context } from "./context";
+import { checkWithout } from "./features";
 
 /** Orca's settings, in ~/.orca/config.json. Every key is optional. */
 export type Config = {
@@ -13,6 +14,8 @@ export type Config = {
    * the shell command to run (e.g. orca start ~/dev/app). Unset: macOS Terminal.
    */
   terminal?: string[];
+  /** Features orca applies when it creates a project's home, to leave out (container-features.md) */
+  without?: string[];
 };
 
 const DEFAULTS: Config = { proxyPort: 7320, servePort: 7321 };
@@ -34,5 +37,10 @@ export function readConfig(ctx: Context): Config {
       throw new OrcaError(`${key} in ${tilde(ctx, file)} must be a port number (1–65535).`);
   if (config.terminal !== undefined && (!Array.isArray(config.terminal) || config.terminal.length === 0 || config.terminal.some((a) => typeof a !== "string")))
     throw new OrcaError(`terminal in ${tilde(ctx, file)} must be a list of strings, e.g. ["my-terminal", "-e", "{command}"].`);
+  if (config.without !== undefined) {
+    if (!Array.isArray(config.without) || config.without.some((a) => typeof a !== "string"))
+      throw new OrcaError(`without in ${tilde(ctx, file)} must be a list of feature names, e.g. ["git-identity"].`);
+    checkWithout(config.without, `without in ${tilde(ctx, file)}`);
+  }
   return config;
 }

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { del } from "../commands/delete";
 import { list } from "../commands/list";
 import { create } from "../commands/new";
+import { stop } from "../commands/stop";
 import { update } from "../commands/update";
 import { fakeContext } from "./fake";
 
@@ -22,8 +23,9 @@ test("new makes a project whose code lives in its record, then starts it", async
   const ws = join(t.ctx.orcaDir, "projects/web/workspace");
   expect(existsSync(ws)).toBe(true);
   expect(readFileSync(join(t.ctx.orcaDir, "projects/web/project-path"), "utf8").trim()).toBe(ws);
-  expect(t.attached[0]).toContain("orca-web");
-  expect(t.attached[0]).toContain(`${ws}:/workspace`);
+  const run = t.calls.find((c) => c[0] === "run")!;
+  expect(run).toContain("orca-web");
+  expect(run).toContain(`${ws}:/workspace`);
 });
 
 test("new refuses a name that's taken", async () => {
@@ -211,4 +213,46 @@ test("list --json gives scripts the same facts", async () => {
   await list(t.ctx, { json: true });
   const [p] = JSON.parse(t.output());
   expect(p).toMatchObject({ name: "app", folder: "/Users/me/dev/app", state: "no container", imageUpdate: false });
+});
+
+// ── stop ────────────────────────────────────────────────────────────────────────────────
+
+const T = { "orca.terminals": "1" };
+const term = (name: string, command: string) => `${name}|1|1792722000|${command}|abc123|abc123`;
+
+function running(answers: string[] = []) {
+  const t = fakeContext({}, answers);
+  const dir = record(t.ctx.orcaDir, "app", "/Users/me/dev/app");
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, home: join(dir, "home"), terminals: [term("1", "claude"), term("2", "bash")] });
+  return t;
+}
+
+test("stop lists the terminals it ends and asks first", async () => {
+  const t = running(["n"]);
+  await stop(t.ctx, "app", {});
+  expect(t.output()).toContain("ends its 2 terminals");
+  expect(t.output()).toContain("1  claude");
+  expect(t.state.containers[0].running).toBe(true);
+});
+
+test("stop stops after a yes, or with --yes", async () => {
+  const t = running(["y"]);
+  await stop(t.ctx, "app", {});
+  expect(t.calls).toContainEqual(["stop", "orca-app"]);
+  const u = running();
+  await stop(u.ctx, "app", { yes: true });
+  expect(u.state.containers[0].running).toBe(false);
+});
+
+test("stop without a terminal to ask on needs --yes", async () => {
+  const t = running();
+  await expect(stop(t.ctx, "app", {})).rejects.toMatchObject({ fix: expect.stringContaining("--yes") });
+});
+
+test("list shows how many terminals each running project has", async () => {
+  const t = running();
+  await list(t.ctx, {});
+  expect(t.output()).toContain("running, 2 terminals");
+  await list(t.ctx, { json: true });
+  expect(t.output()).toContain('"command": "claude"');
 });

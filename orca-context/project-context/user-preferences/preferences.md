@@ -22,6 +22,7 @@ Standing requirements from Nicole, adapted from her general web-project preferen
 - Very easy to build, test, run and reset: a Makefile for the repetitive actions.
 - Two environments: development happens inside an Orca container, with `/workspace` mounted from the Mac; the `orca` command runs on the Mac, installed from its release rather than built there. Installs and builds happen in the container; build output that does get made on both sides must not clobber the other's (separate files per platform, like `dist/orca-<platform>`).
 - Follow TDD.
+- Check every interface change in a real browser (Playwright) before calling it done, at the widths and themes people use, and add an end-to-end test that drives it.
 
 ## Interfaces
 

@@ -45,6 +45,32 @@ test("a project's detail adds its sessions and image dates", async () => {
   expect(body.image).toEqual({ container: "2026-09-01T00:00:00Z", newest: "2026-10-21T18:30:00Z" });
 });
 
+test("projects count their open terminals; the detail lists them", async () => {
+  const t = setup();
+  const terminals = ["1|1|2000|claude|host|Fix login", "2|0|1000|bash|host|host"];
+  t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: { "orca.terminals": "1" }, home: join(t.record, "home"), terminals });
+  expect((await t.call("GET", "/api/projects")).body[0].terminalCount).toBe(2);
+  const { body } = await t.call("GET", "/api/projects/app");
+  expect(body.terminals).toEqual([
+    { name: "1", attached: 1, active: 2000000, command: "claude", title: "Fix login" },
+    { name: "2", attached: 0, active: 1000000, command: "bash", title: null },
+  ]);
+});
+
+test("stopping from the page reports only the outcome: its dialog listed the terminals", async () => {
+  const t = setup();
+  t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: { "orca.terminals": "1" }, home: join(t.record, "home"), terminals: ["1|0|1000|bash|host|host"] });
+  expect((await t.call("POST", "/api/projects/app/stop", {})).body).toEqual({ messages: ["Stopped app."] });
+  expect(t.state.containers[0].running).toBe(false);
+});
+
+test("a container from before terminals has none to list", async () => {
+  const t = setup();
+  t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: {}, home: join(t.record, "home") });
+  expect((await t.call("GET", "/api/projects")).body[0].terminalCount).toBe(0);
+  expect((await t.call("GET", "/api/projects/app")).body.terminals).toBeNull();
+});
+
 test("an unknown project is a 404 with the real names", async () => {
   const t = setup();
   const { status, body } = await t.call("GET", "/api/projects/nope");

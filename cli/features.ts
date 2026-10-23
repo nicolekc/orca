@@ -1,0 +1,66 @@
+// What orca adds to a project's container beyond the image, in two kinds:
+//   every time: part of every container orca creates for a project, so in effect whenever it runs
+//   at creation: done once, when orca creates a project's home; never repeated or overwritten
+// container-features.md lists these together with what the image adds, and is kept in step.
+import { existsSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { OrcaError, type Context } from "./context";
+
+export type Box = { name: string; folder: string; home: string; network: string };
+
+/** docker run arguments for every container orca creates (the every-time features). */
+export function containerArgs(b: Box): string[] {
+  return [
+    // The project folder and its own home; everything else in the container is the image's
+    "-v", `${b.folder}:/workspace`,
+    "-v", `${b.home}:/home/node`,
+    // Its own network, which only the forwards proxy also joins
+    "--network", b.network,
+    "--memory=8g", "--cpus=4",
+    // The project's name, for terminal titles, and for naming its Remote Control sessions
+    // (otherwise the container's random hostname)
+    "-e", `ORCA_PROJECT=${b.name}`,
+    "-e", `CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX=${b.name}`,
+  ];
+}
+
+type CreationFeature = {
+  id: string;
+  label: string;
+  /** Applies it to a new home; returns what to tell the user */
+  apply: (ctx: Context, home: string) => Promise<string>;
+};
+
+export const CREATION: CreationFeature[] = [
+  {
+    // Commits in the project are the user's, as on the Mac
+    id: "git-identity",
+    label: "Git identity",
+    async apply(ctx, home) {
+      const get = async (key: string) => {
+        const r = await ctx.host(["git", "config", "--global", key]);
+        return r.code === 0 ? r.stdout.trim() : "";
+      };
+      const [name, email] = await Promise.all([get("user.name"), get("user.email")]);
+      if (!name || !email) return "Git identity: none on this Mac to copy. Set one in the project: git config --global user.name/user.email";
+      const file = join(home, ".gitconfig");
+      if (existsSync(file)) return "Git identity: the home already has a ~/.gitconfig, left as it is";
+      writeFileSync(file, `[user]\n\tname = ${name}\n\temail = ${email}\n`);
+      return `Git identity: ${name} <${email}>, copied from this Mac to the project's ~/.gitconfig`;
+    },
+  },
+];
+
+export const creationIds = CREATION.map((f) => f.id);
+
+/** Checks feature names given to --without or the "without" setting. */
+export function checkWithout(ids: string[], where: string) {
+  const unknown = ids.filter((id) => !creationIds.includes(id));
+  if (unknown.length)
+    throw new OrcaError(`${where}: there's no feature "${unknown[0]}" to leave out.`, `Features applied at creation: ${creationIds.join(", ")}`);
+}
+
+/** Applies the creation features to a new home, printing what each did. */
+export async function applyCreation(ctx: Context, home: string, without: string[]) {
+  for (const f of CREATION) ctx.print(without.includes(f.id) ? `${f.label}: left out (without ${f.id})` : await f.apply(ctx, home));
+}

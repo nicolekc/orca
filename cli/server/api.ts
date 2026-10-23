@@ -1,4 +1,5 @@
 import { del } from "../commands/delete";
+import { stop } from "../commands/stop";
 import { forward } from "../commands/forward";
 import { makeRecord } from "../commands/new";
 import { OrcaError, tilde, type Context } from "../context";
@@ -7,6 +8,7 @@ import { inspectImage, latestImage, loadProjects, type Project } from "../projec
 import { allForwards, proxyState, urlFor } from "../proxy";
 import { listSessions, type Session } from "../sessions";
 import { openInTerminal } from "../terminal";
+import { hasTerminals, listTerminals, openTerminals, type Terminal } from "../terminals";
 
 /** What the dashboard shows for a project. */
 export type ProjectView = {
@@ -16,9 +18,16 @@ export type ProjectView = {
   imageUpdate: boolean;
   managed: boolean;
   forwards: { port: number; url: string }[];
+  /** How many terminals are open in its container */
+  terminalCount: number;
   lastUsed: number;
 };
-export type ProjectDetail = ProjectView & { sessions: Session[]; image: { container: string | null; newest: string | null } };
+export type ProjectDetail = ProjectView & {
+  sessions: Session[];
+  /** Open terminals; null when its container is from an image before terminals */
+  terminals: Terminal[] | null;
+  image: { container: string | null; newest: string | null };
+};
 export type ActionResult = { messages: string[] };
 export type ApiError = { error: string; fix?: string };
 
@@ -44,7 +53,11 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     if (what !== "projects") throw new NotFound("No such API.");
 
     if (!name) {
-      if (method === "GET") return (await loadProjects(ctx)).map(view);
+      if (method === "GET") {
+        const projects = await loadProjects(ctx);
+        const terminals = await openTerminals(ctx, projects);
+        return projects.map((p) => view(p, terminals.get(p.name)));
+      }
       if (method === "POST") {
         const workspace = makeRecord(ctx, String((await json(req)).name ?? ""));
         await openInTerminal(ctx, [opts.orca, "start", workspace]);
@@ -59,7 +72,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     if (method === "GET" && !action) {
       const latest = await latestImage(ctx);
       const container = p.container ? ((await inspectImage(ctx, p.container.image))?.created ?? null) : null;
-      return { ...view(p), sessions: listSessions(ctx, p.name), image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
+      const terminals = p.container && !hasTerminals(p.container) ? null : p.container?.running ? await listTerminals(ctx, p.container.name) : [];
+      return { ...view(p, terminals ?? []), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
     }
     const b = method === "GET" ? {} : await json(req);
 
@@ -70,14 +84,23 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
         if (typeof session !== "string" || !listSessions(ctx, p.name).some((s) => s.id === session))
           throw new OrcaError(`${p.name} has no session ${String(session)}.`);
         await openInTerminal(ctx, [opts.orca, "start", folder, "--", "claude", "--resume", session]);
-        return done(`Resuming the session in a terminal.`);
+        return done(`Resuming the session in a new terminal.`);
       }
-      await openInTerminal(ctx, [opts.orca, "start", folder]);
-      return done(`Opening ${p.name} in a terminal.`);
+      const terminal = b.terminal;
+      if (terminal !== undefined) {
+        const open = p.container?.running ? await listTerminals(ctx, p.container.name) : [];
+        if (typeof terminal !== "string" || !open.some((t) => t.name === terminal)) throw new OrcaError(`${p.name} has no open terminal ${String(terminal)}.`);
+        await openInTerminal(ctx, [opts.orca, "start", folder, "--terminal", terminal]);
+        return done(`Attaching to terminal ${terminal} in a window.`);
+      }
+      await openInTerminal(ctx, [opts.orca, "start", folder, "--new"]);
+      return done(`Opening a new terminal in ${p.name}.`);
     }
+    // The page's confirmation already listed the terminals it ends: just the outcome
+    if (method === "POST" && action === "stop") return { messages: (await capture((c) => stop(c, p.name, { yes: true }))).messages.slice(-1) };
     if (method === "POST" && action === "recreate") {
       const folder = startable(p);
-      if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Exit every session in it first, then recreate it.");
+      if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Stop it first, then recreate it.");
       await openInTerminal(ctx, [opts.orca, "start", "--fresh", folder]);
       return done(`Recreating ${p.name} in a terminal.`);
     }
@@ -90,7 +113,7 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     throw new NotFound("No such API.");
   }
 
-  function view(p: Project): ProjectView {
+  function view(p: Project, terminals: Terminal[] = []): ProjectView {
     return {
       name: p.name,
       folder: p.folder ? tilde(ctx, p.folder) : null,
@@ -98,6 +121,7 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       imageUpdate: p.outdated,
       managed: p.managed,
       forwards: allForwards(ctx).filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
+      terminalCount: terminals.length,
       lastUsed: Math.max(p.container?.startedAt ?? 0, p.legacy?.startedAt ?? 0),
     };
   }

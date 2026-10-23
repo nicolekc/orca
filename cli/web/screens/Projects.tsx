@@ -52,7 +52,8 @@ function ProjectTable({ projects }: { projects: ProjectView[] }) {
         <tr className="border-b">
           <th className="py-2 pr-4 font-medium">Project</th>
           <th className="py-2 pr-4 font-medium">State</th>
-          <th className="py-2 pr-4 font-medium">Folder</th>
+          {/* The project's page shows it; on a phone the table would be wider than the screen */}
+          <th className="hidden py-2 pr-4 font-medium sm:table-cell">Folder</th>
           <th className="py-2 pr-4 font-medium">Forwards</th>
           <th className="py-2 font-medium">
             <span className="sr-only">Actions</span>
@@ -70,10 +71,15 @@ function ProjectTable({ projects }: { projects: ProjectView[] }) {
             <td className="py-2.5 pr-4">
               <div className="flex flex-wrap gap-x-3">
                 <StateLabel state={p.state} />
+                {p.terminalCount > 0 && (
+                  <span className="whitespace-nowrap text-muted-foreground tabular-nums">
+                    {p.terminalCount} terminal{p.terminalCount === 1 ? "" : "s"}
+                  </span>
+                )}
                 {p.imageUpdate && <UpdateFlag />}
               </div>
             </td>
-            <td className="max-w-64 truncate py-2.5 pr-4 font-mono text-xs text-muted-foreground" title={p.folder ?? ""}>
+            <td className="hidden max-w-64 truncate py-2.5 pr-4 font-mono sm:table-cell text-xs text-muted-foreground" title={p.folder ?? ""}>
               {p.folder}
             </td>
             <td className="py-2.5 pr-4">

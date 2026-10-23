@@ -2,13 +2,13 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OrcaError, type Context } from "../context";
 import { recordDir } from "../projects";
-import { start } from "./start";
+import { start, type StartOptions } from "./start";
 
 export const NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 
 /** Makes a project whose code lives in ~/.orca/projects/<name>/workspace, then starts it. */
-export async function create(ctx: Context, name: string): Promise<number> {
-  return start(ctx, makeRecord(ctx, name), {});
+export async function create(ctx: Context, name: string, opts: Pick<StartOptions, "without"> = {}): Promise<number> {
+  return start(ctx, makeRecord(ctx, name), opts);
 }
 
 /** The record for a new project, with an empty workspace for its code; returns the workspace. */

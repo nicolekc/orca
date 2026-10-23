@@ -5,6 +5,7 @@
 # `script` and exit at once. Uses a throwaway ORCA_DIR and project folders.
 set -euo pipefail
 ORCA="$(realpath "$1")"
+HERE="$(dirname "$(realpath "$0")")"
 T=$(mktemp -d)
 export ORCA_DIR="$T/orca"
 mkdir -p "$T/dev/demo"
@@ -27,14 +28,27 @@ in_tty start "$T/dev/demo"
 [ "$(docker inspect -f '{{index .Config.Labels "orca.project"}}' orca-demo)" = demo ] || fail "label"
 [ "$(mount_of orca-demo /workspace/node_modules)" = "" ] || fail "node_modules is part of the project folder"
 
-step "start again resumes it"
-in_tty start "$T/dev/demo" | tee out.txt
-grep -q "Resuming demo" out.txt || fail "should resume"
+sleep 8
+if [ "$(docker inspect -f '{{.State.Running}}' orca-demo)" != true ]; then
+  docker inspect -f '{{json .State}}' orca-demo; docker logs orca-demo 2>&1 | tail -20
+  fail "the container should keep running for a minute after its last window closes"
+fi
 
-step "list shows it"
+step "start again opens a terminal in it"
+in_tty start "$T/dev/demo" | tee out.txt
+grep -q "Opening demo terminal 1" out.txt || fail "should open a terminal"
+
+step "a terminal keeps running without a window, and list shows it"
+docker exec orca-demo tmux new-session -d -s 1 sleep 600
+"$ORCA" list | tee out.txt
+grep -Eq "demo +● running, 1 terminal" out.txt || fail "list should show demo's terminal"
+"$ORCA" list --json | grep -q '"name": "demo"' || fail "list --json"
+
+step "stop says which terminals it ends, then stops"
+"$ORCA" stop demo --yes | tee out.txt
+grep -q "1  sleep" out.txt || fail "stop should list the terminal"
 "$ORCA" list | tee out.txt
 grep -Eq "demo +○ stopped" out.txt || fail "list should show demo stopped"
-"$ORCA" list --json | grep -q '"name": "demo"' || fail "list --json"
 
 step "an out-of-date container says so"
 real=$(docker image inspect -f '{{.Id}}' orca:latest)
@@ -88,6 +102,12 @@ from_container=$(docker run --rm --add-host=host.docker.internal:host-gateway or
   curl -s -o /dev/null -w '%{http_code}' -m 3 http://host.docker.internal:7321/api/projects || true)
 echo "   a container calling the dashboard got: $from_container"
 [ "$from_container" != 200 ] || fail "a container should not get the API"
+
+step "the dashboard, in a browser, shows a terminal and stops its project"
+docker start orca-demo >/dev/null
+docker exec orca-demo tmux new-session -d -s 1 sleep 600
+bun "$HERE/dashboard.ts" "$(grep -o 'http://[^ ]*token=[^ ]*' serve.log)" demo sleep
+[ "$(docker inspect -f '{{.State.Running}}' orca-demo)" = false ] || fail "the dashboard should have stopped demo"
 kill $serve_pid
 
 step "delete removes container and volume, keeps the home"

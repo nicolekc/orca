@@ -5,8 +5,14 @@ set -euxo pipefail
 
 claude --version
 grep -q 'About this environment' /etc/claude-code/CLAUDE.md
+jq -e '.crossSessionInbound == "refuse"' /etc/claude-code/managed-settings.json
 gh --version | head -1
-git config user.name
+# Commits are the user's: no identity comes with the image
+! git config --system user.name
+# Terminals: tmux with orca's settings, and the main process that waits for them
+tmux -V
+ORCA_PROJECT=check tmux new-session -d -s 1 && test "$(tmux show -gv @project)" = check && tmux kill-server
+command -v orca-keepalive
 gcc --version | head -1
 ffmpeg -version | head -1
 node --version

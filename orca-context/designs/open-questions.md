@@ -9,3 +9,5 @@ Decisions deliberately postponed. Check here before working on the related area.
 - [GitHub bot identity](github-bot-identity.md): letting Claude comment and review on GitHub as itself while commits stay the user's.
 - [Devcontainers](devcontainers.md): moving container definition to the devcontainer spec, and opening projects in VS Code.
 - [The node_modules volume](node-modules-volume.md): decided, no volume; the costs accepted and when to revisit.
+- [Terminals](terminals.md): decided; several chats per project as tmux sessions, and the plan they're step 1 of.
+- [Research, October 2026](landscape-2026-10.md): credentials out of containers, egress, Docker Sandboxes and cloud as backends, Claude Projects, skills packaging, remote access, editors.
