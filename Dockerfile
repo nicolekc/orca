@@ -29,6 +29,7 @@ FROM node:24-trixie-slim
 #                        PR evidence); Playwright's own ffmpeg only records WebM
 #   unzip, zip           archives
 #   procps, less         ps/top, a pager
+#   tmux                 orca's terminals: each one keeps running when its window closes
 RUN apt-get update && apt-get install -y curl ca-certificates \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -36,7 +37,7 @@ RUN apt-get update && apt-get install -y curl ca-certificates \
        > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update && apt-get install -y \
        git openssh-client gh sudo ripgrep fd-find jq tree \
-       build-essential ffmpeg unzip zip procps less \
+       build-essential ffmpeg unzip zip procps less tmux \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Browser libraries ───────────────────────────────────────────────────────────────────
@@ -63,9 +64,6 @@ RUN corepack enable \
 # ── Container user ──────────────────────────────────────────────────────────────────────
 ARG USERNAME=node
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME
-# Commits show as claude-bot unless a project's own ~/.gitconfig says otherwise
-RUN git config --system user.name "claude-bot" \
-    && git config --system user.email "claude-bot@users.noreply.github.com"
 
 # ── Python ──────────────────────────────────────────────────────────────────────────────
 # uv (docs.astral.sh/uv) manages Python versions, virtual environments and packages:
@@ -110,9 +108,19 @@ ENV NPM_CONFIG_PREFIX=/home/node/.local \
     PIP_BREAK_SYSTEM_PACKAGES=1
 ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/uv/bin:/opt/claude/.local/bin:$PATH"
 
+# ── What orca adds to every container ───────────────────────────────────────────────────
+# Listed, with what orca adds when it creates or starts a container, in container-features.md.
 # What every session should know about the container, read by Claude in every project
 COPY image/environment.md /etc/claude-code/CLAUDE.md
+# Claude settings a project can't change: sessions in other projects can't message these ones
+COPY image/managed-settings.json /etc/claude-code/managed-settings.json
+# Terminals: tmux's defaults for them (a project's ~/.tmux.conf can change any of it), and the
+# main process, which keeps the container running while any terminal or other shell is open
+COPY image/tmux.conf /etc/tmux.conf
+COPY --chmod=755 image/keepalive.sh /usr/local/bin/orca-keepalive
+# Tells orca this image has terminals (containers made from older images open plain shells)
+LABEL orca.terminals="1"
 
 USER $USERNAME
 WORKDIR /workspace
-CMD ["bash"]
+CMD ["orca-keepalive"]
