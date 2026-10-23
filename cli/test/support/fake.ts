@@ -155,7 +155,8 @@ function inspected(c: FakeContainer) {
 }
 
 /** A context over a fresh temp folder standing in for the Mac's home. */
-export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = [], host: Record<string, string> = {}) {
+/** `answers` answer `ask` and `choose` in turn; for `choose`, an option's value, or null to quit. */
+export function fakeContext(state: Partial<FakeState> = {}, answers: (string | null)[] = [], host: Record<string, string> = {}) {
   const home = mkdtempSync(join(tmpdir(), "orca-test-"));
   const full: FakeState = { containers: [], volumes: [], networks: [], latest: "sha256:new", created: {}, ...state };
   const { docker, calls, attached } = fakeDocker(full);
@@ -167,6 +168,13 @@ export function fakeContext(state: Partial<FakeState> = {}, answers: string[] = 
     home,
     print: (line = "") => lines.push(line),
     ask: answers.length ? async () => answers.shift() ?? "" : null,
+    choose: answers.length
+      ? async (question, options) => {
+          lines.push(question, ...options.map((o) => `  ${o.label}`));
+          const answer = answers.shift() ?? null;
+          return options.some((o) => o.value === answer) ? answer : null;
+        }
+      : null,
     color: false,
     launch: async (argv) => void launched.push(argv),
     host: async (argv) => {
