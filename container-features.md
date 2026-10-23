@@ -38,7 +38,7 @@ From the image (`Dockerfile`):
 
 | Feature | What it does |
 |---|---|
-| Terminals | Each `orca start` window shows a tmux session in the container, which keeps running when the window closes. `/etc/tmux.conf` sets orca's defaults (mouse, scrollback, titles, the keys Claude needs); a project's `~/.tmux.conf` can change any of them. |
+| Terminals | Each `orca start` window shows a tmux session in the container, which keeps running when the window closes. `/etc/tmux.conf` sets orca's defaults (mouse, scrollback, titles, the keys Claude needs); a project's `~/.tmux.conf` can change any of them. `LANG=C.UTF-8` so tmux shows non-ASCII characters rather than `_`. |
 | Keeping the container up | Its main process (`orca-keepalive`) keeps it running while any terminal or other shell (such as an attached editor) is open, and stops it a minute after the last ends. |
 | Environment note | `/etc/claude-code/CLAUDE.md`, which every Claude session reads (Codex gets the same text, below): what the container is and how it differs from a normal machine. |
 | Codex settings | `/etc/codex/config.toml`, Codex's system config (a project's `~/.codex/config.toml` overrides it): no sandbox of its own (`danger-full-access`), since the container is the sandbox and Docker blocks the namespaces Codex's needs; and the environment note above as its developer instructions. |

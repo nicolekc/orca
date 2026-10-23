@@ -123,6 +123,8 @@ COPY image/managed-settings.json /etc/claude-code/managed-settings.json
 # Codex's defaults (its system config), with the same note as its developer instructions
 COPY image/codex.toml /etc/codex/config.toml
 RUN { echo "developer_instructions = '''"; cat /etc/claude-code/CLAUDE.md; echo "'''"; } >> /etc/codex/config.toml
+# A UTF-8 locale: without one tmux shows non-ASCII characters (Claude's ⎿, ●, ❯) as _
+ENV LANG=C.UTF-8
 # Terminals: tmux's defaults for them (a project's ~/.tmux.conf can change any of it), and the
 # main process, which keeps the container running while any terminal or other shell is open
 COPY image/tmux.conf /etc/tmux.conf
