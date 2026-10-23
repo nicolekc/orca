@@ -118,13 +118,6 @@ This creates a single narrative thread for the task. A future agent or human can
 
 The project's AGENTS.md is the primary project context file, read by Codex and other agents; its CLAUDE.md is the line `@AGENTS.md`, so Claude reads the same file. The seed (`.orca/seed.md`) is a supplement, not a replacement. AGENTS.md has project-specific commands, conventions, and context that the framework doesn't know about.
 
-## Self-Installation
-
-When the orca repo installs into itself:
-- `framework/` is the **source** (canonical, edited by developers)
-- `.orca/` is the **installed copy** (generated, overwritten on install)
-- These are different directories — no conflict
-
 ## AGENTS.md Pattern
 
 Projects can use `AGENTS.md` files in subdirectories to provide per-directory context to AI agents. These contain learnings, instructions, and conventions specific to the code in that directory. AGENTS.md at the top level should instruct agents to read and write AGENTS.md files as they learn about the codebase.
