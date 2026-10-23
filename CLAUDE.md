@@ -16,6 +16,7 @@ Read `.orca/seed.md` before starting any task.
 - `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
 - `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks
 - Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, `orca-loop.sh`, etc.
+- `container-features.md` — everything orca adds to a project's container (at creation, and every time); keep it in step when adding one
 - `orca-context/project-context/` — Context for working on Orca: user preferences (read `user-preferences/` in full) and reference material
 - `orca-context/designs/open-questions.md` — Postponed design decisions (container setup, tools). Check before changing the related area.
 - `BACKLOG.json` — Pre-PRD backlog: future improvements, unsolved problems, and working knowledge from real project use. Check before starting framework evolution work.

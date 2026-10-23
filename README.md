@@ -143,6 +143,8 @@ orca               # pick a project and start it
 
 `orca serve` (a dashboard of every project, forward and Claude session), `orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
 
+Each `orca start` opens a terminal in the project's container: a tmux session that keeps running when its window closes, so a project can have any number of chats going at once. Everything orca adds to a container, at creation and every time it runs, is listed in [container-features.md](container-features.md).
+
 ## Repository Structure
 
 This repo is **self-hosting** — the framework is installed into itself for development.
