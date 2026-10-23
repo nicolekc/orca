@@ -20,19 +20,12 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       cli: ${{ steps.diff.outputs.changed }}
-      image: ${{ steps.image.outputs.changed }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
       - id: diff
         run: .github/changed.sh cli package.json bun.lock bunfig.toml tsconfig.json Makefile .github/workflows/cli.yml
-      # The same paths as image.yml: when they differ from the published image's (main's, for a
-      # pull request, which may be stacked on another), test against this change's image
-      - id: image
-        run: .github/changed.sh Dockerfile image .github/check-image.sh .github/workflows/image.yml
-        env:
-          BASE: ${{ github.event_name == 'pull_request' && 'origin/main' || '' }}
 
   test:
     runs-on: ubuntu-24.04
@@ -56,14 +49,26 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0   # for the commit the published image was built from
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install build
-      - name: Get the published image
-        if: needs.changes.outputs.image != 'true'
-        run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest
-      - name: Build this change's image (it changed the image too)
-        if: needs.changes.outputs.image == 'true'
-        run: docker build -t orca:latest .
+      # The published image, unless the image's files changed since the commit it was built
+      # from (its label): a pull request that changes it, or a push whose image is still building
+      - name: Get this commit's image
+        env:
+          PUBLISHED: ghcr.io/${{ github.repository }}:latest
+        run: |
+          docker pull -q "$PUBLISHED"
+          built=$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$PUBLISHED")
+          if [ -n "$built" ] && git cat-file -e "$built^{commit}" 2>/dev/null &&
+             git diff --quiet "$built" HEAD -- Dockerfile image .github/check-image.sh; then
+            echo "The published image (built from $built) is this commit's"
+            docker tag "$PUBLISHED" orca:latest
+          else
+            echo "The image changed since the published one (built from ${built:-an unknown commit}): building it"
+            docker build -t orca:latest .
+          fi
       - run: bash cli/test/e2e/e2e.sh dist/orca-linux-x64
 
   release:

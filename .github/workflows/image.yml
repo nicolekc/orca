@@ -81,6 +81,8 @@ jobs:
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           platforms: ${{ matrix.platform }}
+          # The commit it's built from, so tests can tell whether a commit's image is published
+          labels: org.opencontainers.image.revision=${{ github.sha }}
           no-cache: ${{ github.event_name == 'schedule' || github.event.inputs.fresh == 'true' }}
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-${{ matrix.arch }}
           # Only main updates the cache; pull requests read it
