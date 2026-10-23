@@ -1,6 +1,10 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { realDocker, type Docker, type Result } from "./docker";
+import { show } from "./ui/show";
+
+/** One answer to a question asked with `choose`: what it shows, and what choosing it returns. */
+export type Option = { label: string; value: string };
 
 /** Everything a command needs from the outside world, so tests can replace any of it. */
 export type Context = {
@@ -12,6 +16,8 @@ export type Context = {
   print: (line?: string) => void;
   /** Asks a question on the terminal; null when there's no terminal to ask on. */
   ask: ((question: string) => Promise<string>) | null;
+  /** Asks a question answered with the arrow keys; resolves to the chosen value, or null if the user quit. Null when there's no terminal. */
+  choose: ((question: string, options: Option[]) => Promise<string | null>) | null;
   color: boolean;
   /** Starts a program on the Mac without waiting for it (e.g. a terminal window) */
   launch: (argv: string[]) => Promise<void>;
@@ -21,13 +27,15 @@ export type Context = {
 
 export function realContext(): Context {
   const home = homedir();
+  const orcaDir = process.env.ORCA_DIR ?? join(home, ".orca");
   const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   return {
     docker: realDocker,
-    orcaDir: process.env.ORCA_DIR ?? join(home, ".orca"),
+    orcaDir,
     home,
     print: (line = "") => console.log(line),
     ask: interactive ? (q) => Promise.resolve(prompt(q) ?? "") : null,
+    choose: interactive ? (q, options) => show(join(orcaDir, "orca.log"), "choose", { question: q, options }) : null,
     color: Boolean(process.stdout.isTTY) && !process.env.NO_COLOR,
     launch: async (argv) => {
       const proc = Bun.spawn(argv, { stdio: ["ignore", "ignore", "pipe"] });

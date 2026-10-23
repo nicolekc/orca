@@ -119,11 +119,10 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
 async function openTerminal(ctx: Context, name: string, container: string, opts: StartOptions): Promise<number> {
   const open = await listTerminals(ctx, container);
   let pick = opts.terminal ?? null;
-  if (!pick && !opts.new && !opts.command && open.length && ctx.ask) {
-    ctx.print(`${name} has ${count(open.length)} open:`);
-    for (const t of open) ctx.print(`  ${describe(t)}`);
-    const answer = (await ctx.ask("Attach to which? (its name, or Enter for a new terminal) ")).trim();
-    if (answer && !open.some((t) => t.name === answer)) throw new OrcaError(`${name} has no terminal "${answer}".`, `Open ones: ${open.map((t) => t.name).join(", ")}`);
+  if (!pick && !opts.new && !opts.command && open.length && ctx.choose) {
+    const options = [{ label: "New terminal", value: "" }, ...open.map((t) => ({ label: describe(t), value: t.name }))];
+    const answer = await ctx.choose(`${name} has ${count(open.length)} open. Attach to which?`, options);
+    if (answer === null) return 0;
     pick = answer || null;
   }
   if (opts.command && pick && open.some((t) => t.name === pick))

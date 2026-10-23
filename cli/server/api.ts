@@ -137,7 +137,7 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
   /** Runs a command, collecting what it would have printed. */
   async function capture(fn: (c: Context) => Promise<unknown>): Promise<ActionResult> {
     const messages: string[] = [];
-    await fn({ ...ctx, print: (l = "") => messages.push(l), ask: null });
+    await fn({ ...ctx, print: (l = "") => messages.push(l), ask: null, choose: null });
     return { messages };
   }
 }

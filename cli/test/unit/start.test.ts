@@ -89,6 +89,15 @@ test("with terminals open, it asks which to attach to", async () => {
   expect(t.attached[0].slice(-3)).toEqual(["-A", "-s", "2"]);
 });
 
+test("the question offers a new terminal first, then the open ones; quitting it opens nothing", async () => {
+  const t = fakeContext({}, [null]);
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: T, workspace: dir, home: homeOf(t), terminals: [term("1")] });
+  expect(await start(t.ctx, dir, {})).toBe(0);
+  expect(t.output()).toMatch(/New terminal\n {2}1 {2}bash/);
+  expect(t.attached).toEqual([]);
+});
+
 test("answering with Enter opens a new terminal under the next free name", async () => {
   const t = fakeContext({}, [""]);
   const dir = folder(t.home);
