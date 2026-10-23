@@ -1,15 +1,10 @@
 # Orca Framework
 
-This repo is the Orca agent framework — composable tools for AI-assisted software development. It is also self-hosting: the framework is installed into itself for development.
-
-## Orca Framework
-
-Read `.orca/seed.md` before starting any task.
+This repo is the Orca agent framework — composable tools for AI-assisted software development.
 
 ## What This Repo Contains
 
-- `framework/` — **Source** of framework files (perspectives, processes, seed, templates). This is the canonical version. **ALL edits to framework files go here.**
-- `.orca/` — **Installed copy** of `framework/`. **NEVER edit .orca/ directly** — edit in `framework/` and sync.
+- `framework/` — the framework files (perspectives, processes, seed, templates), installed into projects as `.orca/`
 - `.orca-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
 - `docs/` — Framework design documentation
 - `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
@@ -52,11 +47,3 @@ Agents in project containers are treated as untrusted by the tooling on the Mac.
 - NEVER push to main directly
 - Always work on feature branches
 - Small, logical commits with clear messages
-
-## How to Run /orca
-
-```
-/orca path/to/prd.json
-```
-
-Orca reads the PRD, dispatches subagents to work through task pipelines, and pushes when done.

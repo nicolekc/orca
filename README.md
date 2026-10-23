@@ -148,12 +148,9 @@ Each `orca start` opens a terminal in the project's container: a tmux session th
 
 ## Repository Structure
 
-This repo is **self-hosting** — the framework is installed into itself for development.
-
 | Directory | Purpose |
 |-----------|---------|
-| `framework/` | **Source** of framework files. All edits go here. |
-| `.orca/` | **Installed copy** of `framework/`. Never edit directly. |
+| `framework/` | Framework files, installed into projects as `.orca/` |
 | `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
 | `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |
@@ -163,9 +160,9 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 
 | File | Purpose |
 |------|---------|
-| `.orca/seed.md` | Working style principles — read before any task |
-| `.orca/orca.md` | Orchestrator instructions |
-| `.orca/processes/prd.md` | Pipeline model and task lifecycle |
+| `framework/seed.md` | Working style principles — read before any task |
+| `framework/orca.md` | Orchestrator instructions |
+| `framework/processes/prd.md` | Pipeline model and task lifecycle |
 | `.claude/skills/install-orca/` | Installs or updates the framework in a project |
 | `ORCA_PROMPT.md` | Bash-loop mode instructions (thin wrapper around orca.md) |
 
