@@ -28,7 +28,8 @@ need it); `claude agents` view or herdr instead of our own list.
 
 **The plan this is step 1 of:**
 1. Terminals, the features list, the git identity copied from the Mac at creation, no claude-bot.
-2. Codex in the image, and AGENTS.md as the canonical instructions file.
+2. Codex in the image, and AGENTS.md as the canonical instructions file (built: Codex's system
+   config carries the environment note; projects' CLAUDE.md is `@AGENTS.md`).
 3. The multi-repo top level: a generated `.code-workspace` (one root per git repo found, relative
    paths, so it works on the Mac and in an attached editor); then `orca code` as a shortcut
    that opens VS Code attached to the container (optional; not everyone uses an editor).

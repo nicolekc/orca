@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Stamp a new project context directory — a git repo with CLAUDE.md, RESOURCE-INDEX.md, user-preferences, and scratch, ready for resources and a one-shot build
+description: Stamp a new project context directory — a git repo with AGENTS.md, RESOURCE-INDEX.md, user-preferences, and scratch, ready for resources and a one-shot build
 ---
 
 You are setting up a project context directory with the human. This is interactive — ask when input is missing.
@@ -11,7 +11,7 @@ Read `.orca/oneshot.md` — it defines the project directory's shape and how bui
 
 Solicit from the human:
 
-- A one-paragraph description of what this project is, for `CLAUDE.md`.
+- A one-paragraph description of what this project is, for `AGENTS.md`.
 - What to seed `user-preferences/` with — their standing requirements in their words, or copied from an existing project they name. Don't invent preferences.
 
 Commit the initial state, then tell the human the project is ready and that `/new-resource <project>` adds searchable resources.

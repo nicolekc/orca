@@ -39,7 +39,8 @@ From the image (`Dockerfile`):
 |---|---|
 | Terminals | Each `orca start` window shows a tmux session in the container, which keeps running when the window closes. `/etc/tmux.conf` sets orca's defaults (mouse, scrollback, titles, the keys Claude needs); a project's `~/.tmux.conf` can change any of them. |
 | Keeping the container up | Its main process (`orca-keepalive`) keeps it running while any terminal or other shell (such as an attached editor) is open, and stops it a minute after the last ends. |
-| Environment note | `/etc/claude-code/CLAUDE.md`, which every Claude session reads: what the container is and how it differs from a normal machine. |
+| Environment note | `/etc/claude-code/CLAUDE.md`, which every Claude session reads (Codex gets the same text, below): what the container is and how it differs from a normal machine. |
+| Codex settings | `/etc/codex/config.toml`, Codex's system config (a project's `~/.codex/config.toml` overrides it): no sandbox of its own (`danger-full-access`), since the container is the sandbox and Docker blocks the namespaces Codex's needs; and the environment note above as its developer instructions. |
 | Claude managed settings | `/etc/claude-code/managed-settings.json`, which a project can't change: Claude sessions in other projects can't message this project's sessions (`crossSessionInbound: refuse`), and messages to other machines need approval (`isolatePeerMachines`). |
 | Installs into the home | npm, pnpm, yarn, uv and pip install tools into `~`, so they're kept across recreations. Other Python versions go in the container instead (`/opt/uv/python`), because the Mac's disk ignores letter case. |
 | No git identity | The image sets none: commits are made as whoever the project's `~/.gitconfig` says. |

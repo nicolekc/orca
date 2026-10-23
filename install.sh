@@ -188,12 +188,22 @@ else
     UNCHANGED+=("orca-context/")
 fi
 
-# --- 4. CLAUDE.md (user file -- create only) ---
+# --- 4. AGENTS.md, and CLAUDE.md importing it (user files -- create only) ---
+# AGENTS.md is read by Codex and other agents; Claude reads CLAUDE.md, which imports it.
+# A project with its own CLAUDE.md and no AGENTS.md keeps it as it is.
 
-copy_user_file \
-    "$ORCA_DIR/templates/CLAUDE.md.template" \
-    "$TARGET_DIR/CLAUDE.md" \
-    "CLAUDE.md (run /discover to populate)"
+if [ -f "$TARGET_DIR/CLAUDE.md" ] && [ ! -f "$TARGET_DIR/AGENTS.md" ]; then
+    UNCHANGED+=("CLAUDE.md (to share it with other agents: move it to AGENTS.md, and make CLAUDE.md the line @AGENTS.md)")
+else
+    copy_user_file \
+        "$ORCA_DIR/templates/AGENTS.md.template" \
+        "$TARGET_DIR/AGENTS.md" \
+        "AGENTS.md (run /discover to populate)"
+    copy_user_file \
+        "$ORCA_DIR/templates/CLAUDE.md.template" \
+        "$TARGET_DIR/CLAUDE.md" \
+        "CLAUDE.md (imports AGENTS.md)"
+fi
 
 # --- 5. .claudeignore (framework-managed) ---
 

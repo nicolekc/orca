@@ -1,14 +1,1 @@
-# Project Context
-
-Read `.orca/seed.md` before starting any task.
-
-## Commands
-<!-- Run /discover to populate this section -->
-
-## Git Rules
-- NEVER push to main directly
-- Always work on feature branches
-- Small, logical commits with clear messages
-
-## Project Details
-<!-- Run /discover to populate this section -->
+@AGENTS.md

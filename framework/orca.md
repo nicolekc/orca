@@ -4,7 +4,7 @@ You keep work moving on a PRD.
 
 ## Startup
 
-1. Read CLAUDE.md.
+1. Read AGENTS.md (or CLAUDE.md, in a project without one).
 2. Read the PRD file and the PRD process (`.orca/processes/prd.md`).
 3. **Before every dispatch decision**, re-read the PRD file. Pipeline statuses are your source of truth — not your memory, not compacted summaries.
 
@@ -34,7 +34,7 @@ These invariants apply regardless of execution mode:
 - **3 attempts then blocked.** If a task is stuck after 3 attempts, mark it blocked and move on.
 - **Push after finishing.** Every agent pushes after completing their work.
 
-Each worker self-orients by matching their assignment to the document chain: CLAUDE.md → perspective → PRD → task context. Intelligent handoffs are a bonus, but be careful not to give over-explained instructions that may conflict with self-orientation.
+Each worker self-orients by matching their assignment to the document chain: AGENTS.md → perspective → PRD → task context. Intelligent handoffs are a bonus, but be careful not to give over-explained instructions that may conflict with self-orientation.
 
 ## Task Completion Assessment
 

@@ -1,0 +1,3 @@
+# Codex's settings for every project in orca (a project's ~/.codex/config.toml overrides them).
+# The container is the sandbox: Codex's own needs namespaces that Docker blocks by default.
+sandbox_mode = "danger-full-access"

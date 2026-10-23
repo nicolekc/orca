@@ -1,11 +1,11 @@
 ---
 name: discover
-description: Explore a project and populate CLAUDE.md with tech stack, patterns, and testing setup
+description: Explore a project and populate AGENTS.md with tech stack, patterns, and testing setup
 ---
 
 # Project Discovery
 
-Explore this project and update CLAUDE.md with the following sections. If CLAUDE.md doesn't exist, create it first.
+Explore this project and update AGENTS.md with the following sections. If it doesn't exist, create it, with a CLAUDE.md that imports it (the line `@AGENTS.md`). If the project keeps its instructions in CLAUDE.md alone, update that instead.
 
 ## 1. Tech Stack
 
@@ -57,4 +57,4 @@ Document the testing infrastructure:
 
 **Do NOT invent patterns that don't exist. Only document what you observe.**
 
-Save the updated CLAUDE.md when done and summarize what you found.
+Save the updated file when done and summarize what you found.

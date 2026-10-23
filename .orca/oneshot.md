@@ -6,7 +6,7 @@ This file tells you what kinds of context exist and how each kind is used. The i
 
 **IMPORTANT — the system has three parts. Use all three:**
 
-1. **The project directory** — every build belongs to a project directory, `<project>/`, which can live anywhere. Its `CLAUDE.md` and `RESOURCE-INDEX.md` tell you what context exists for this build.
+1. **The project directory** — every build belongs to a project directory, `<project>/`, which can live anywhere. Its `AGENTS.md` and `RESOURCE-INDEX.md` tell you what context exists for this build.
 2. **Semantic search** — the easiest way to find an idea in the human's background knowledge or scratch.
 3. **Perspectives** — if doing work that matches a perspective, **ALWAYS** read the perspective file; when dispatching a subagent for that work, **ALWAYS** name the file in its prompt. The agent can use its own expertise, but the perspective gives helpful additional values we believe in.
 
@@ -16,15 +16,16 @@ The goal names the project directory: a git repo holding the project's CONTEXT (
 
 ```
 <project>/                      # git repo: this project's context
-├── CLAUDE.md                   # entry point — read first
+├── AGENTS.md                   # entry point — read first
+├── CLAUDE.md                   # @AGENTS.md, so Claude reads it too
 ├── RESOURCE-INDEX.md           # which resource categories exist, and how to use each
 ├── user-preferences/           # markdown, always read in full
 ├── <resource categories>/      # raw files + search db + AGENTS.md, one dir per category
 ├── scratch/                    # handoff notes for work in flight
-└── ...                         # ad-hoc context, indexed by CLAUDE.md
+└── ...                         # ad-hoc context, indexed by AGENTS.md
 ```
 
-- `CLAUDE.md` — the project's entry point. Always present, read first. It orients you to everything in the directory, including any ad-hoc context the human left at the root.
+- `AGENTS.md` — the project's entry point. Always present, read first. It orients you to everything in the directory, including any ad-hoc context the human left at the root.
 - `RESOURCE-INDEX.md` — lists this project's resource categories: what each holds and how to use it. A category is a directory of raw files with a pre-built search db and its own AGENTS.md.
 - `user-preferences/` — the human's standing requirements: stack, tooling, conventions. Markdown, always read in full before making decisions they govern. The goal can override them.
 - `scratch/` — handoff notes for work in flight. See its section below.
@@ -69,5 +70,5 @@ Build through revertable milestones — the goal usually says roughly how many (
 - Only the project context directory has a fixed shape — the build target lives wherever the goal says.
 - The definition of done comes from the goal. If it's missing, derive one, write it down, and hold yourself to it — never stop to ask.
 - Full autonomy: no permission-seeking, no option menus, no pausing for confirmation.
-- Give the built app a CLAUDE.md that breadcrumbs the project directory and this context system.
+- Give the built app an AGENTS.md (and a CLAUDE.md importing it) that breadcrumbs the project directory and this context system.
 - The final summary is honest: what's done, what's shaky, exact commands to run it.

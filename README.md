@@ -17,7 +17,7 @@ This installs:
 - `.orca/` — Framework core (perspectives, processes, seed, templates)
 - `.claude/skills/` — `/orca`, `/discover`, `/refine` skills
 - `orca-context/` — Scaffold for project-specific context
-- `CLAUDE.md` — Project context file (populate with `/discover`)
+- `AGENTS.md` — Project context file, read by Claude (through `CLAUDE.md`, which imports it), Codex and other agents (populate with `/discover`)
 - `.claudeignore`, `.git-hooks/pre-push`, `.gitignore` additions
 
 ### Set up project context
@@ -28,7 +28,7 @@ claude
 > /discover
 ```
 
-This explores your project and populates CLAUDE.md with tech stack, patterns, and testing setup.
+This explores your project and populates AGENTS.md with tech stack, patterns, and testing setup.
 
 ### Create a PRD
 
@@ -143,7 +143,7 @@ orca               # pick a project and start it
 
 `orca serve` (a dashboard of every project, forward and Claude session), `orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
 
-Each `orca start` opens a terminal in the project's container: a tmux session that keeps running when its window closes, so a project can have any number of chats going at once. Everything orca adds to a container, at creation and every time it runs, is listed in [container-features.md](container-features.md).
+Each `orca start` opens a terminal in the project's container: a tmux session that keeps running when its window closes, so a project can have any number of chats going at once. Claude Code and Codex come with the image; each logs in once per project (`claude`, then `codex login --device-auth`, since the container has no browser; it needs device code sign-in turned on in ChatGPT's security settings). Everything orca adds to a container, at creation and every time it runs, is listed in [container-features.md](container-features.md).
 
 ## Repository Structure
 
@@ -157,7 +157,7 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 | `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
 | `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |
-| `templates/` | Install templates (CLAUDE.md.template, .claudeignore, .git-hooks) |
+| `templates/` | Install templates (AGENTS.md.template, CLAUDE.md.template, .claudeignore, .git-hooks) |
 
 ### Key Files
 
