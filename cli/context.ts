@@ -35,7 +35,8 @@ export function realContext(): Context {
     },
     host: async (argv) => {
       try {
-        const proc = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe" });
+        // Detached from the terminal, as docker's runs are, so it doesn't take the window's title
+        const proc = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe", detached: true });
         const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
         return { code, stdout, stderr };
       } catch {
