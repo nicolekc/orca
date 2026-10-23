@@ -41,7 +41,9 @@ export function Sessions() {
             <tbody>
               {sessions.data.map((s) => (
                 <tr key={`${s.project}/${s.id}`} className="border-b last:border-0">
-                  <td className="max-w-md truncate py-2.5 pr-4">{s.title}</td>
+                  <td className="w-full max-w-0 truncate py-2.5 pr-4" title={s.title}>
+                    {s.title}
+                  </td>
                   <td className="py-2.5 pr-4">
                     <a href={link(`/p/${encodeURIComponent(s.project)}`)} className="text-muted-foreground hover:text-foreground hover:underline">
                       {s.project}

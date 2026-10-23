@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { start } from "../commands/start";
-import { fakeContext } from "./fake";
+import { start } from "../../commands/start";
+import { fakeContext } from "../support/fake";
 
 function folder(home: string, name = "app") {
   const dir = join(home, "dev", name);

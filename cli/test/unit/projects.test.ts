@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadProjects } from "../projects";
-import { fakeContext } from "./fake";
+import { loadProjects } from "../../projects";
+import { fakeContext } from "../support/fake";
 
 function record(orcaDir: string, name: string, folder: string) {
   const dir = join(orcaDir, "projects", name);

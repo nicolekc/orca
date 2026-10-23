@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { del } from "../commands/delete";
-import { list } from "../commands/list";
-import { create } from "../commands/new";
-import { stop } from "../commands/stop";
-import { update } from "../commands/update";
-import { fakeContext } from "./fake";
+import { del } from "../../commands/delete";
+import { list } from "../../commands/list";
+import { create } from "../../commands/new";
+import { stop } from "../../commands/stop";
+import { update } from "../../commands/update";
+import { fakeContext } from "../support/fake";
 
 function record(orcaDir: string, name: string, folder: string) {
   const dir = join(orcaDir, "projects", name);

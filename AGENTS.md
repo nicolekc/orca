@@ -14,7 +14,7 @@ Read `.orca/seed.md` before starting any task.
 - `.orca-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
 - `docs/` — Framework design documentation
 - `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
-- `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks
+- `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks. `make check` runs every test that runs here (unit, React, browser); the Docker end-to-end tests (`cli/test/e2e/`) run in CI
 - Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, `orca-loop.sh`, etc.
 - `container-features.md` — everything orca adds to a project's container (at creation, and every time); keep it in step when adding one
 - `orca-context/project-context/` — Context for working on Orca: user preferences (read `user-preferences/` in full) and reference material

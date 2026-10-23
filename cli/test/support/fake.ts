@@ -1,8 +1,8 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Context } from "../context";
-import type { Docker, Result } from "../docker";
+import type { Context } from "../../context";
+import type { Docker, Result } from "../../docker";
 
 export type FakeContainer = {
   name: string;

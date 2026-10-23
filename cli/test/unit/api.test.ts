@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createApi } from "../server/api";
-import { fakeContext } from "./fake";
+import { createApi } from "../../server/api";
+import { fakeContext } from "../support/fake";
 
 const SESSION = "11111111-2222-3333-4444-555555555555";
 

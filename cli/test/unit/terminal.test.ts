@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { shellQuote, terminalArgv } from "../terminal";
-import { fakeContext } from "./fake";
+import { shellQuote, terminalArgv } from "../../terminal";
+import { fakeContext } from "../support/fake";
 
 test("plain arguments stay readable; anything else is single-quoted for the shell", () => {
   expect(shellQuote("/Users/me/dev/app")).toBe("/Users/me/dev/app");

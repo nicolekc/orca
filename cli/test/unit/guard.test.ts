@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { guard, securityHeaders } from "../server/guard";
+import { guard, securityHeaders } from "../../server/guard";
 
 const opts = { token: "s3cret-token", port: 7321 };
 const req = (path: string, init: RequestInit & { host?: string; cookie?: string } = {}) => {

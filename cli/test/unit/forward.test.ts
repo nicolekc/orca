@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { del } from "../commands/delete";
-import { forward } from "../commands/forward";
-import { start } from "../commands/start";
-import { list } from "../commands/list";
-import { hostFor, PROXY, PROXY_IMAGE, projectAt } from "../proxy";
-import { fakeContext } from "./fake";
+import { del } from "../../commands/delete";
+import { forward } from "../../commands/forward";
+import { start } from "../../commands/start";
+import { list } from "../../commands/list";
+import { hostFor, PROXY, PROXY_IMAGE, projectAt } from "../../proxy";
+import { fakeContext } from "../support/fake";
 
 function project(t: ReturnType<typeof fakeContext>, name = "app") {
   const folder = join(t.home, "dev", name);

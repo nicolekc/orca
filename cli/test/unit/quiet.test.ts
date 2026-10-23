@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { quietConsole } from "../ui/quiet";
+import { quietConsole } from "../../ui/quiet";
 
 test("while quiet, warnings go to the log once each, and the console comes back after", () => {
   const log = join(mkdtempSync(join(tmpdir(), "orca-quiet-")), "orca.log");
