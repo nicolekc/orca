@@ -154,7 +154,6 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 |-----------|---------|
 | `framework/` | **Source** of framework files. All edits go here. |
 | `.orca/` | **Installed copy** of `framework/`. Never edit directly. |
-| `orca-context/` | Project-specific context (overrides, knowledge, PRDs, designs, tasks) |
 | `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
 | `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |

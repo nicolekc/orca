@@ -10,22 +10,18 @@ Read `.orca/seed.md` before starting any task.
 
 - `framework/` — **Source** of framework files (perspectives, processes, seed, templates). This is the canonical version. **ALL edits to framework files go here.**
 - `.orca/` — **Installed copy** of `framework/`. **NEVER edit .orca/ directly** — edit in `framework/` and sync.
-- `orca-context/` — Project-specific context (overrides, knowledge, designs, PRDs, durable task context)
 - `.orca-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
 - `docs/` — Framework design documentation
 - `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
 - `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks. `make check` runs every test that runs here (unit, React, browser); the Docker end-to-end tests (`cli/test/e2e/`) run in CI
 - Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, `orca-loop.sh`, etc.
 - `container-features.md` — everything orca adds to a project's container (at creation, and every time); keep it in step when adding one
-- `orca-context/project-context/` — Context for working on Orca: user preferences (read `user-preferences/` in full) and reference material
-- `orca-context/designs/open-questions.md` — Postponed design decisions (container setup, tools). Check before changing the related area.
-- `BACKLOG.json` — Pre-PRD backlog: future improvements, unsolved problems, and working knowledge from real project use. Check before starting framework evolution work.
 
 ## Framework / Installed Boundary
 
 **Installed into target projects** (via `.orca/`): `seed.md`, `perspectives/`, `orca.md`, `processes/`, `templates/`
 
-**Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, `orca-context/`, Docker/bash scripts
+**Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, Docker/bash scripts
 
 ## Essential Reading
 
@@ -60,11 +56,7 @@ Agents in project containers are treated as untrusted by the tooling on the Mac.
 ## How to Run /orca
 
 ```
-/orca orca-context/prds/001-foundation.json
+/orca path/to/prd.json
 ```
 
 Orca reads the PRD, dispatches subagents to work through task pipelines, and pushes when done.
-
-## Key Knowledge Files
-
-Knowledge files live in `orca-context/knowledge/` (one file per learning, append-only). Currently empty — learnings from earlier PRDs are in their respective `orca-context/tasks/` directories.
