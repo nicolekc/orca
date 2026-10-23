@@ -28,7 +28,11 @@ in_tty start "$T/dev/demo"
 [ "$(docker inspect -f '{{index .Config.Labels "orca.project"}}' orca-demo)" = demo ] || fail "label"
 [ "$(mount_of orca-demo /workspace/node_modules)" = "" ] || fail "node_modules is part of the project folder"
 
-[ "$(docker inspect -f '{{.State.Running}}' orca-demo)" = true ] || fail "the container should outlive its first window"
+sleep 8
+if [ "$(docker inspect -f '{{.State.Running}}' orca-demo)" != true ]; then
+  docker inspect -f '{{json .State}}' orca-demo; docker logs orca-demo 2>&1 | tail -20
+  fail "the container should keep running for a minute after its last window closes"
+fi
 
 step "start again opens a terminal in it"
 in_tty start "$T/dev/demo" | tee out.txt
