@@ -112,7 +112,7 @@ function Terminals({ p }: { p: ProjectDetail }) {
       title="Terminals"
       aside={
         running && (
-          <Button size="sm" variant="outline" disabled={stop.isPending} onClick={() => (terminals.length ? setConfirming(true) : stopNow())}>
+          <Button size="sm" variant="outline" disabled={stop.isPending} onClick={() => (terminals.length || p.terminals === null ? setConfirming(true) : stopNow())}>
             Stop container
           </Button>
         )
@@ -145,7 +145,8 @@ function Terminals({ p }: { p: ProjectDetail }) {
           <DialogHeader>
             <DialogTitle>Stop {p.name}?</DialogTitle>
             <DialogDescription>
-              This ends {terminals.length === 1 ? "its terminal" : `its ${terminals.length} terminals`} and whatever runs in them. Claude conversations can be continued later.
+              {p.terminals === null ? "This ends any shells open in it" : `This ends ${terminals.length === 1 ? "its terminal" : `its ${terminals.length} terminals`}`} and whatever
+              runs in them. Claude conversations can be continued later.
             </DialogDescription>
           </DialogHeader>
           <ul className="grid gap-1 text-sm">

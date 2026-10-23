@@ -38,6 +38,12 @@ export async function listTerminals(ctx: Context, container: string): Promise<Te
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 }
 
+/** Each running project's open terminals, by project name. */
+export async function openTerminals(ctx: Context, projects: { name: string; container: Container | null }[]): Promise<Map<string, Terminal[]>> {
+  const running = projects.filter((p) => p.container?.running && hasTerminals(p.container));
+  return new Map(await Promise.all(running.map(async (p) => [p.name, await listTerminals(ctx, p.container!.name)] as const)));
+}
+
 /** The next terminal name: the lowest number not in use. */
 export function nextName(open: Terminal[]): string {
   for (let i = 1; ; i++) if (!open.some((t) => t.name === String(i))) return String(i);

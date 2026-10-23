@@ -46,6 +46,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install build
+      # For the dashboard's browser check
+      - run: bun x playwright install --with-deps chromium
       - name: Get the published image
         if: needs.changes.outputs.image != 'true'
         run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest

@@ -2,17 +2,11 @@ import { tilde, type Context } from "../context";
 import { stateOf, symbol, IMAGE_UPDATE } from "../present";
 import { loadProjects } from "../projects";
 import { allForwards, proxyState, urlFor } from "../proxy";
-import { hasTerminals, listTerminals, type Terminal } from "../terminals";
+import { openTerminals } from "../terminals";
 
 export async function list(ctx: Context, opts: { json?: boolean }): Promise<void> {
   const projects = await loadProjects(ctx);
-  const terminals = new Map<string, Terminal[]>(
-    await Promise.all(
-      projects
-        .filter((p) => p.container?.running && hasTerminals(p.container))
-        .map(async (p) => [p.name, await listTerminals(ctx, p.container!.name)] as const),
-    ),
-  );
+  const terminals = await openTerminals(ctx, projects);
   if (opts.json) {
     const forwards = allForwards(ctx);
     const rows = projects.map((p) => ({

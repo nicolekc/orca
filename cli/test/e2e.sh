@@ -5,6 +5,7 @@
 # `script` and exit at once. Uses a throwaway ORCA_DIR and project folders.
 set -euo pipefail
 ORCA="$(realpath "$1")"
+HERE="$(dirname "$(realpath "$0")")"
 T=$(mktemp -d)
 export ORCA_DIR="$T/orca"
 mkdir -p "$T/dev/demo"
@@ -97,6 +98,11 @@ from_container=$(docker run --rm --add-host=host.docker.internal:host-gateway or
   curl -s -o /dev/null -w '%{http_code}' -m 3 http://host.docker.internal:7321/api/projects || true)
 echo "   a container calling the dashboard got: $from_container"
 [ "$from_container" != 200 ] || fail "a container should not get the API"
+
+step "the dashboard, in a browser, shows a terminal and stops its project"
+docker exec orca-demo tmux new-session -d -s 1 sleep 600
+bun "$HERE/dashboard.ts" "$(grep -o 'http://[^ ]*token=[^ ]*' serve.log)" demo sleep
+[ "$(docker inspect -f '{{.State.Running}}' orca-demo)" = false ] || fail "the dashboard should have stopped demo"
 kill $serve_pid
 
 step "delete removes container and volume, keeps the home"
