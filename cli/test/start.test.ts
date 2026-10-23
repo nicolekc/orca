@@ -31,7 +31,7 @@ test("a new folder gets a record, and a container in the background with its fol
   expect(run).toContain("ORCA_PROJECT=app");
   // The image's own main process keeps it running while terminals are open
   expect(run[run.length - 1]).toBe("orca:latest");
-  expect(t.attached[0]).toEqual(["exec", "-it", "-e", "TERM", "-e", "COLORTERM", "orca-app", "tmux", "new-session", "-A", "-s", "1"]);
+  expect(t.attached[0]).toEqual(["exec", "-it", "-e", "TERM=xterm-256color", "-e", "COLORTERM", "orca-app", "tmux", "new-session", "-A", "-s", "1"]);
 });
 
 test("a new home gets the Mac's git identity, and says so", async () => {

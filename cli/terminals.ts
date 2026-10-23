@@ -45,8 +45,9 @@ export function nextName(open: Terminal[]): string {
 
 /** docker arguments that attach this window to the named terminal, creating it (running `command`) if needed. */
 export function terminalArgs(container: string, name: string, command?: string[]): string[] {
-  // The Mac terminal's type, so colors and keys work inside tmux
-  const exec = ["exec", "-it", "-e", "TERM", "-e", "COLORTERM", container, "tmux"];
+  // A terminal type every modern terminal handles, rather than the Mac's own, which the
+  // container may not know (e.g. Ghostty's) or may be unusable (CI); COLORTERM for full color
+  const exec = ["exec", "-it", "-e", "TERM=xterm-256color", "-e", "COLORTERM", container, "tmux"];
   return command?.length ? [...exec, "new-session", "-s", name, "--", ...command] : [...exec, "new-session", "-A", "-s", name];
 }
 
