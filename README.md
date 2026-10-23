@@ -8,17 +8,18 @@ See [WHY.md](WHY.md) for the motivation and design philosophy.
 
 ### Install into your project
 
-```bash
-git clone https://github.com/nicolekc/orca.git ~/orca
-~/orca/install.sh ~/projects/my-app
+In your project, ask Claude (or another agent) to follow the install skill:
+
+```
+Install Orca: follow https://github.com/nicolekc/orca/blob/main/.claude/skills/install-orca/SKILL.md
 ```
 
-This installs:
+In a project that has it, `/install-orca` updates it. This installs:
 - `.orca/` — Framework core (perspectives, processes, seed, templates)
-- `.claude/skills/` — `/orca`, `/discover`, `/refine` skills
+- `.claude/skills/` — `/orca`, `/discover`, `/refine`, and the design skills the perspectives use
 - `orca-context/` — Scaffold for project-specific context
 - `AGENTS.md` — Project context file, read by Claude (through `CLAUDE.md`, which imports it), Codex and other agents (populate with `/discover`)
-- `.claudeignore`, `.git-hooks/pre-push`, `.gitignore` additions
+- `.git-hooks/pre-push` (no pushes to main), `.gitignore` additions
 
 ### Set up project context
 
@@ -157,7 +158,7 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 | `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
 | `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |
-| `templates/` | Install templates (AGENTS.md.template, CLAUDE.md.template, .claudeignore, .git-hooks) |
+| `templates/` | Install templates (AGENTS.md.template, CLAUDE.md.template, .git-hooks) |
 
 ### Key Files
 
@@ -166,7 +167,7 @@ This repo is **self-hosting** — the framework is installed into itself for dev
 | `.orca/seed.md` | Working style principles — read before any task |
 | `.orca/orca.md` | Orchestrator instructions |
 | `.orca/processes/prd.md` | Pipeline model and task lifecycle |
-| `install.sh` | Installs the framework into a target project |
+| `.claude/skills/install-orca/` | Installs or updates the framework in a project |
 | `ORCA_PROMPT.md` | Bash-loop mode instructions (thin wrapper around orca.md) |
 
 ## Design Principles

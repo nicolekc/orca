@@ -97,16 +97,6 @@
       "example_content": "Refuse to be satisfied until you've genuinely tried to break it. If the test infrastructure itself is broken, fixing it is part of verification — not a separate task. Surface-level evidence ('tests pass' when tests are mocked, 'works' without actually running it) is not verification."
     },
     {
-      "id": "B010",
-      "title": "Replace install.sh with install process documentation",
-      "type": "unsolved_problem",
-      "priority": "high",
-      "description": "install.sh is a 307-line bash script for installing the framework. But agents don't need scripts — they need instructions about what the correct layout is and can do it themselves. The script is a crutch from when the framework was human-installed. Replace with documented process that agents (and humans) can follow. Also: the fact that PRD 001 task 002 said 'update install.sh' instead of questioning whether a script was the right approach is itself a principle-adherence failure worth understanding.",
-      "why": "PR #6 review: the task should have thought from a big enough picture to see that the outcome is an install *process*, not an install *script*. Agents read docs and execute steps — a bash script adds a layer of indirection that's harder to debug and doesn't teach the agent what the layout should be.",
-      "source": "PR #6 review comment on PRD 001 task 002, 2026-02-20",
-      "example_content": null
-    },
-    {
       "id": "B011",
       "title": "Agent migration of confusing content",
       "type": "working_knowledge",
