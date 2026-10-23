@@ -25,7 +25,9 @@ export type Container = {
 export const realDocker: Docker = {
   async run(args) {
     try {
-      const proc = Bun.spawn(["docker", ...args], { stdout: "pipe", stderr: "pipe" });
+      // Detached from the terminal (its own session): orca serve runs these every few seconds,
+      // and a terminal titles its window after the program in front, so it flashed "docker"
+      const proc = Bun.spawn(["docker", ...args], { stdout: "pipe", stderr: "pipe", detached: true });
       const [stdout, stderr, code] = await Promise.all([
         new Response(proc.stdout).text(),
         new Response(proc.stderr).text(),
