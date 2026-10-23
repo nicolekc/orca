@@ -1,4 +1,0 @@
-# Repo is public — keep transcripts and their index (which contains chunk text) local
-sources/*
-!sources/.gitkeep
-.search/
