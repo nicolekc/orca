@@ -79,6 +79,7 @@ docker exec orca-web curl -s -m 3 -o /dev/null http://orca-demo:3000/ && fail "p
 docker stop orca-demo orca-web >/dev/null
 
 step "list shows the forward"
+for c in orca-demo orca-web; do echo "$c: $(docker inspect -f '{{json .State}}' $c)"; docker logs $c 2>&1 | tail -5; done
 "$ORCA" list | tee out.txt
 grep -q "http://3000.demo.localhost:7320 → demo:3000" out.txt || fail "list should show the forward"
 
