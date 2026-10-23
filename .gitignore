@@ -4,3 +4,6 @@
 # orca command builds (make build / make dist)
 /dist/
 /node_modules/
+
+# macOS folder metadata
+.DS_Store
