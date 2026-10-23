@@ -31,5 +31,5 @@ need it); `claude agents` view or herdr instead of our own list.
 2. Codex in the image, and AGENTS.md as the canonical instructions file (built: Codex's system
    config carries the environment note; projects' CLAUDE.md is `@AGENTS.md`).
 3. The multi-repo top level: a generated `.code-workspace` (one root per git repo found, relative
-   paths, so it works on the Mac and in an attached editor); then `orca code` as a shortcut
+   paths, so it works on the Mac and in an attached editor; built); then `orca code` as a shortcut
    that opens VS Code attached to the container (optional; not everyone uses an editor).

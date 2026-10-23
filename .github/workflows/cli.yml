@@ -27,9 +27,12 @@ jobs:
           fetch-depth: 0
       - id: diff
         run: .github/changed.sh cli package.json bun.lock bunfig.toml tsconfig.json Makefile .github/workflows/cli.yml
-      # The same paths as image.yml: when they changed too, test against this change's image
+      # The same paths as image.yml: when they differ from the published image's (main's, for a
+      # pull request, which may be stacked on another), test against this change's image
       - id: image
         run: .github/changed.sh Dockerfile image .github/check-image.sh .github/workflows/image.yml
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && 'origin/main' || '' }}
 
   test:
     runs-on: ubuntu-24.04
@@ -46,8 +49,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install build
-      # For the dashboard's browser check
+      # For the browser checks: the dashboard, and the workspace file in code-server (VS Code in
+      # a browser; pinned to a release more than a week old)
       - run: bun x playwright install --with-deps chromium
+      - run: |
+          curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --version 4.141.0 --prefix "$HOME/.local"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Get the published image
         if: needs.changes.outputs.image != 'true'
         run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest

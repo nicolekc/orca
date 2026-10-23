@@ -14,7 +14,7 @@ import {
   volumeName,
 } from "../projects";
 import { readConfig } from "../config";
-import { applyCreation, checkWithout, containerArgs } from "../features";
+import { applyCreation, checkWithout, containerArgs, workspaceFile } from "../features";
 import { allForwards, ensureNetwork, syncProxy } from "../proxy";
 import { describe, hasTerminals, listTerminals, nextName, terminalArgs } from "../terminals";
 
@@ -53,6 +53,7 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
   // A home created now gets the creation features; an existing one is never changed
   const newHome = isEmpty(home);
   claimRecord(ctx, name, folder);
+  workspaceFile(ctx, name, folder, without);
 
   const legacy = containers.find((c) => !c.home && c.workspace === folder);
   if (legacy && !existing && !migrated(ctx, name))
