@@ -36,6 +36,7 @@ const VIEWS = [
 const SCREENS: [string, string][] = [
   ["/", "Projects"],
   ["/sessions", "Recent sessions"],
+  ["/forwards", "Forwards"],
   ...["app", "demo", "idle", "old", "stopped", "fresh", "legacy"].map((p): [string, string] => [`/p/${p}`, p]),
 ];
 
@@ -102,6 +103,22 @@ test("the dialogs open, read correctly and close (Stop, Delete, New project)", a
   await shot(p, "dialog-new");
   await p.keyboard.press("Escape");
   await expect(create).toBeHidden();
+  expect(errors).toEqual([]);
+  await close();
+}, 30_000);
+
+test("the header's forwards status leads to every forward, each with its project", async () => {
+  const { p, errors, close } = await page(VIEWS[1]);
+  await p.goto(new URL("/app#/", link).href);
+  // The fake Docker has no proxy running, while three forwards are on record
+  await p.getByRole("link", { name: "3 forwards · proxy stopped" }).click();
+  await expect(p.getByRole("heading", { level: 1, name: "Forwards" })).toBeVisible();
+  await expect(p.getByRole("main")).toContainText("isn't running");
+  const rows = p.getByRole("main").getByRole("row");
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(1).getByRole("link", { name: "3000.app.localhost:7320" })).toHaveAttribute("href", "http://3000.app.localhost:7320");
+  await expect(rows.nth(3)).toContainText("llm-chat-framework-sandbox");
+  await expect(rows.nth(3)).toContainText("stopped");
   expect(errors).toEqual([]);
   await close();
 }, 30_000);

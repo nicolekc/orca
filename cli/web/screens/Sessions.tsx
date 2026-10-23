@@ -31,8 +31,9 @@ export function Sessions() {
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b">
                 <th className="py-2 pr-4 font-medium">Session</th>
-                <th className="py-2 pr-4 font-medium">Project</th>
-                <th className="py-2 pr-4 font-medium">Updated</th>
+                {/* On a phone they go under the title, which would otherwise get only a few letters */}
+                <th className="hidden py-2 pr-4 font-medium sm:table-cell">Project</th>
+                <th className="hidden py-2 pr-4 font-medium sm:table-cell">Updated</th>
                 <th className="py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -41,15 +42,18 @@ export function Sessions() {
             <tbody>
               {sessions.data.map((s) => (
                 <tr key={`${s.project}/${s.id}`} className="border-b last:border-0">
-                  <td className="w-full max-w-0 truncate py-2.5 pr-4" title={s.title}>
-                    {s.title}
+                  <td className="w-full max-w-0 py-2.5 pr-4">
+                    <div className="truncate" title={s.title}>
+                      {s.title}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground sm:hidden">
+                      <ProjectLink project={s.project} /> · {ago(s.updated)}
+                    </div>
                   </td>
-                  <td className="py-2.5 pr-4">
-                    <a href={link(`/p/${encodeURIComponent(s.project)}`)} className="text-muted-foreground hover:text-foreground hover:underline">
-                      {s.project}
-                    </a>
+                  <td className="hidden py-2.5 pr-4 whitespace-nowrap sm:table-cell">
+                    <ProjectLink project={s.project} />
                   </td>
-                  <td className="py-2.5 pr-4 whitespace-nowrap text-muted-foreground tabular-nums">{ago(s.updated)}</td>
+                  <td className="hidden py-2.5 pr-4 whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">{ago(s.updated)}</td>
                   <td className="py-2.5 text-right">
                     {resumable(s.project) && (
                       <Button size="sm" variant="ghost" onClick={() => open.mutate({ project: s.project, session: s.id }, { onSuccess: notify.done, onError: notify.failed })}>
@@ -64,5 +68,13 @@ export function Sessions() {
         )}
       </div>
     </>
+  );
+}
+
+function ProjectLink({ project }: { project: string }) {
+  return (
+    <a href={link(`/p/${encodeURIComponent(project)}`)} className="text-muted-foreground hover:text-foreground hover:underline">
+      {project}
+    </a>
   );
 }

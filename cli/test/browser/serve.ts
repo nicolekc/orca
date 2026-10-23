@@ -20,6 +20,13 @@ export const PROJECTS = world(
     { name: "idle", container: "running" },
     { name: "old", container: "running", old: true, outdated: true },
     { name: "stopped", container: "stopped" },
+    // A long name, as real ones are, with a forward that can't open while it's stopped
+    {
+      name: "llm-chat-framework-sandbox",
+      container: "stopped",
+      forwards: [8080],
+      sessions: [{ id: "31111111-2222-3333-4444-555555555555", title: "Stream replies token by token", updated: ago(60 * 3) }],
+    },
     { name: "fresh", container: "none" },
     { name: "legacy", notMigrated: true },
   ],
