@@ -7,4 +7,4 @@ Project-specific context for developing the Orca framework.
 - `prds/` — Task definitions (PRD files)
 - `designs/` — Design documents and investigations; `open-questions.md` indexes postponed decisions
 - `tasks/` — Durable per-task context (research, brain dumps, design notes, exploration results)
-- `project-context/` — Project context directory for Orca development work (one-shot shape: CLAUDE.md, RESOURCE-INDEX.md, resource categories)
+- `project-context/` — Project context directory for Orca development work (one-shot shape: AGENTS.md, RESOURCE-INDEX.md, resource categories)

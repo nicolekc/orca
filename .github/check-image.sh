@@ -6,6 +6,9 @@ set -euxo pipefail
 claude --version
 grep -q 'About this environment' /etc/claude-code/CLAUDE.md
 jq -e '.crossSessionInbound == "refuse"' /etc/claude-code/managed-settings.json
+codex --version
+# Codex: no sandbox of its own, and the environment note as its developer instructions
+python3 -c 'import tomllib; c = tomllib.load(open("/etc/codex/config.toml", "rb")); assert c["sandbox_mode"] == "danger-full-access" and "About this environment" in c["developer_instructions"]'
 gh --version | head -1
 # Commits are the user's: no identity comes with the image
 ! git config --system user.name

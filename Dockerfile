@@ -88,6 +88,10 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/bin
 # the project's home (~/.local/bin, first on PATH), so a new container starts right away
 # with this copy, and each project then runs its own up-to-date one.
 RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
+# Codex: OpenAI's agent (developers.openai.com/codex), from npm, as with Playwright: the newest
+# published at least a week before the build. It offers updates itself; they install into the
+# project's home (see below), first on PATH, like Claude's.
+RUN npm_config_before="$(date -d '7 days ago' +%F)" npm install -g @openai/codex && codex --version
 
 # ── Installs inside containers ──────────────────────────────────────────────────────────
 # Every package manager installs tools into the project's home, with its commands on PATH:
@@ -100,6 +104,7 @@ RUN curl -fsSL https://claude.ai/install.sh | HOME=/opt/claude bash
 #                                          the home; the image's Python is root-owned, so
 #                                          it can't be changed. Inside a .venv, as usual.)
 #   claude updates       ~/.local          (Claude's default; see Agent CLIs)
+#   codex updates        ~/.local          (it updates with npm install -g)
 #   gh extension install ~/.local/share/gh (gh's default)
 # Caches (npm, uv, Playwright browsers) are in ~/.cache by default; corepack's are in the image.
 # Only system packages (sudo apt install) stay in the container; add lasting ones above.
@@ -110,10 +115,14 @@ ENV PATH="/home/node/.local/bin:$PNPM_HOME/bin:/opt/uv/bin:/opt/claude/.local/bi
 
 # ── What orca adds to every container ───────────────────────────────────────────────────
 # Listed, with what orca adds when it creates or starts a container, in container-features.md.
-# What every session should know about the container, read by Claude in every project
+# What every session should know about the container, read by Claude in every project (and
+# Codex, below)
 COPY image/environment.md /etc/claude-code/CLAUDE.md
 # Claude settings a project can't change: sessions in other projects can't message these ones
 COPY image/managed-settings.json /etc/claude-code/managed-settings.json
+# Codex's defaults (its system config), with the same note as its developer instructions
+COPY image/codex.toml /etc/codex/config.toml
+RUN { echo "developer_instructions = ; cat /etc/claude-code/CLAUDE.md; echo "; } >> /etc/codex/config.toml
 # Terminals: tmux's defaults for them (a project's ~/.tmux.conf can change any of it), and the
 # main process, which keeps the container running while any terminal or other shell is open
 COPY image/tmux.conf /etc/tmux.conf
