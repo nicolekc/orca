@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from "react";
 import { NoticeBar, NoticeProvider, link } from "./components/common";
-import { useInfo } from "./lib/api";
+import { useInfo, useProjects } from "./lib/api";
 import { cn } from "./lib/utils";
+import { Forwards } from "./screens/Forwards";
 import { Project } from "./screens/Project";
 import { Projects } from "./screens/Projects";
 import { Sessions } from "./screens/Sessions";
 
-/** The current route, from the URL hash: #/, #/p/<name>, #/sessions */
+/** The current route, from the URL hash: #/, #/p/<name>, #/sessions, #/forwards */
 function useRoute(): string {
   return useSyncExternalStore(
     (onChange) => (window.addEventListener("hashchange", onChange), () => window.removeEventListener("hashchange", onChange)),
@@ -21,7 +22,9 @@ export function App() {
     <div className="mx-auto min-h-dvh max-w-5xl px-6 pb-16">
       <Header route={route} />
       <NoticeProvider render={(notice, clear) => <NoticeBar notice={notice} onClose={clear} />}>
-        <main>{project ? <Project name={decodeURIComponent(project[1])} key={project[1]} /> : route === "/sessions" ? <Sessions /> : <Projects />}</main>
+        <main>
+          {project ? <Project name={decodeURIComponent(project[1])} key={project[1]} /> : route === "/sessions" ? <Sessions /> : route === "/forwards" ? <Forwards /> : <Projects />}
+        </main>
       </NoticeProvider>
     </div>
   );
@@ -41,13 +44,29 @@ function Header({ route }: { route: string }) {
         <nav className="flex gap-1">
           {tab("/", "Projects", route === "/" || route.startsWith("/p/"))}
           {tab("/sessions", "Sessions", route === "/sessions")}
+          {tab("/forwards", "Forwards", route === "/forwards")}
         </nav>
       </div>
       {info.data && (
         <p className="text-xs text-muted-foreground tabular-nums">
-          Forwards proxy {info.data.proxy.running ? <span className="text-success">running</span> : "off"} on 127.0.0.1:{info.data.proxy.port} · {info.data.version}
+          <ForwardsStatus /> · {info.data.version}
         </p>
       )}
     </header>
+  );
+}
+
+/** How many forwards there are and whether they can open, linking to them. */
+function ForwardsStatus() {
+  const info = useInfo();
+  const projects = useProjects();
+  const count = (projects.data ?? []).reduce((n, p) => n + p.forwards.length, 0);
+  const proxy = info.data?.proxy;
+  if (!proxy || !projects.data) return null;
+  const forwards = `${count} forward${count === 1 ? "" : "s"}`;
+  return (
+    <a href={link("/forwards")} className="hover:text-foreground hover:underline">
+      {count === 0 ? "No forwards" : proxy.running ? `${forwards} on 127.0.0.1:${proxy.port}` : <span className="text-warning">{forwards} · proxy stopped</span>}
+    </a>
   );
 }
