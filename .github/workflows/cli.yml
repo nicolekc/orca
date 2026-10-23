@@ -21,7 +21,7 @@ jobs:
     outputs:
       cli: ${{ steps.diff.outputs.changed }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - id: diff
@@ -30,7 +30,7 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install
       # The browser tests' Chromium and code-server, downloaded again only when their versions change
@@ -48,7 +48,7 @@ jobs:
     if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # for the commit the published image was built from
       - run: npm install -g "bun@$BUN_VERSION"
@@ -79,7 +79,7 @@ jobs:
       contents: write   # replacing the release's files
     concurrency: cli-release
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install dist
       # A draft until every file is up, then latest: a download reads `version` from the
