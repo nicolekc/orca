@@ -4,8 +4,8 @@ A project's container is the orca image plus what orca adds when it creates or s
 is the full list, so nothing about a container is a surprise. Keep it in step with
 `cli/features.ts` (what orca adds) and the `Dockerfile` (what the image has).
 
-Orca never changes a file that already exists. The one planned exception is a generated
-workspace file for editors, which says it's generated.
+Orca never changes a file that already exists, with one exception: the workspace file (below),
+while its first line still says orca made it.
 
 ## At creation
 
@@ -28,6 +28,7 @@ From orca (`cli/features.ts`):
 | Feature | What it does |
 |---|---|
 | Project folder | Mounted at `/workspace`. |
+| `workspace-file` | On every `orca start`, in a folder holding git repos below its top (up to three levels; not `node_modules` or hidden folders): `<project>.code-workspace`, for VS Code and Cursor. One root for the top and one per repo, so search and indexing reach each repo; the top's root hides them, so nothing shows twice (except a repo another repo has a folder at the same path as: editors hide by path in every root). Paths are relative, so it works on the Mac and in an editor attached to the container. Rewritten when the repos change, while its first line is orca's; remove that comment to keep your own. Leave it out with `"without": ["workspace-file"]` in `~/.orca/config.json`. |
 | Home | `~/.orca/projects/<project>/home` mounted as `~`: logins, Claude memory and settings, installed tools. |
 | Network | The project's own network, which only the forwards proxy also joins: projects can't reach each other. |
 | Limits | 8 GB of memory, 4 CPUs. |

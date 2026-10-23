@@ -46,8 +46,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: npm install -g "bun@$BUN_VERSION"
       - run: make install build
-      # For the dashboard's browser check
+      # For the browser checks: the dashboard, and the workspace file in code-server (VS Code in
+      # a browser; pinned to a release more than a week old)
       - run: bun x playwright install --with-deps chromium
+      - run: |
+          curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --version 4.141.0 --prefix "$HOME/.local"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Get the published image
         if: needs.changes.outputs.image != 'true'
         run: docker pull ghcr.io/${{ github.repository }}:latest && docker tag ghcr.io/${{ github.repository }}:latest orca:latest

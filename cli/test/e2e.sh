@@ -9,6 +9,10 @@ HERE="$(dirname "$(realpath "$0")")"
 T=$(mktemp -d)
 export ORCA_DIR="$T/orca"
 mkdir -p "$T/dev/demo"
+# A repo inside the project, which the top's .gitignore hides (as an orchestration repo would)
+git init -q "$T/dev/demo/api"
+echo 'export const word = "zebracorn42";' > "$T/dev/demo/api/token.ts"
+echo api/ > "$T/dev/demo/.gitignore"
 cd "$T"
 
 step() { echo; echo "== $*"; }
@@ -27,6 +31,10 @@ in_tty start "$T/dev/demo"
 [ "$(mount_of orca-demo /home/node)" = "$ORCA_DIR/projects/demo/home" ] || fail "home mount"
 [ "$(docker inspect -f '{{index .Config.Labels "orca.project"}}' orca-demo)" = demo ] || fail "label"
 [ "$(mount_of orca-demo /workspace/node_modules)" = "" ] || fail "node_modules is part of the project folder"
+grep -q '"path": "api"' "$T/dev/demo/demo.code-workspace" || fail "the workspace file should have the api repo"
+
+step "the workspace file, in an editor, searches the repo the folder alone misses"
+bun "$HERE/editor.ts" "$T/dev/demo" "$T/dev/demo/demo.code-workspace" zebracorn42 token.ts
 
 sleep 8
 if [ "$(docker inspect -f '{{.State.Running}}' orca-demo)" != true ]; then

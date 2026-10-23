@@ -28,8 +28,9 @@ Usage:
       --new                 open a new terminal without asking
       --terminal <name>     attach to that terminal (or open it under that name)
       --fresh               recreate the container, e.g. on a newer image
-      --without <feature>   when this creates the project, leave out a feature that copies
-                            something from the Mac, e.g. git-identity (container-features.md)
+      --without <feature>   leave out a feature: one that copies something from the Mac
+                            when this creates the project (git-identity), or the
+                            workspace-file (container-features.md)
       -- <command>          run a command in a new terminal instead of a shell,
                             e.g. -- claude --resume
   orca stop [project]       stop a project's container (default: this folder's), after
