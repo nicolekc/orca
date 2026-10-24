@@ -1,6 +1,6 @@
 # The orca command (cli/): tests on every pull request and push; an end-to-end run against
 # real Docker; and on main, builds for every platform published as a release of their own,
-# cli-<commit>, marked latest, which cli/install.sh and `orca update` download from.
+# cli-<commit>, the newest marked latest, which cli/install.sh and `orca update` download from.
 name: CLI
 
 on:
@@ -84,8 +84,10 @@ jobs:
       - run: make install dist
       # A draft until every file is up, then latest: a download reads `version` from the
       # latest release and fetches the rest from that same one, so it never mixes two builds.
+      # Latest only if it's newer than the latest already out: merges close together can finish
+      # out of order, and an older build mustn't replace a newer one (it's still published).
       # (GitHub has one latest per repo; anything else this repo releases should pass --latest=false.)
-      - name: Publish as the latest release
+      - name: Publish, as the latest release if it's the newest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -93,7 +95,17 @@ jobs:
           gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true   # a re-run of this commit
           gh release create "$tag" dist/orca-* dist/version --draft --target "$GITHUB_SHA" \
             --title "orca $(cat dist/version)" --notes "The orca command, built from $GITHUB_SHA. Install: cli/install.sh"
-          gh release edit "$tag" --draft=false --latest
+          # The latest release's commit; none yet (a 404) makes this one the latest
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" -q .target_commitish 2>/dev/null) || latest=""
+          newest=true
+          if [ -n "$latest" ]; then
+            status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$latest...$GITHUB_SHA" -q .status)
+            [ "$status" = ahead ] || [ "$status" = identical ] || newest=false
+          fi
+          if [ "$newest" = false ]; then
+            echo "Not marked latest: $(cat dist/version) is older than the latest release's commit, $latest"
+          fi
+          gh release edit "$tag" --draft=false --latest="$newest"
       # The few before it stay, for downloads already under way
       - name: Remove older releases
         env:
