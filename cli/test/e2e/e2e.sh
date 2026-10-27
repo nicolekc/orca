@@ -17,8 +17,13 @@ step() { echo "-- $*"; }
 in_tty() { echo exit | script -qec "$ORCA $*" /dev/null; }
 mount_of() { docker inspect -f "{{range .Mounts}}{{if eq .Destination \"$2\"}}{{.Source}}{{end}}{{end}}" "$1"; }
 running() { docker inspect -f '{{.State.Running}}' "$1"; }
-# Waits up to 15 seconds for a container to stop by itself
-stops() { for _ in $(seq 30); do [ "$(running "$1")" = false ] && return 0; sleep 0.5; done; return 1; }
+# Waits up to 25 seconds for a container to stop by itself; if it doesn't, shows why
+stops() {
+  for _ in $(seq 50); do [ "$(running "$1")" = false ] && return 0; sleep 0.5; done
+  docker exec "$1" sh -c 'ls -la /run/orca; tmux ls; ps -ef' || true
+  docker logs "$1" 2>&1 | tail -20
+  return 1
+}
 
 # Everything orca made: project containers, their networks, the forwards proxy
 clean() {
@@ -73,10 +78,15 @@ projects() {
 }
 
 terminals() {
-  step "the container stops a few seconds after its last terminal ends, and says so"
+  step "exiting the last terminal stops the container, and says so"
   in_tty start "$T/dev/demo" | tee out.txt
-  grep -q "That was demo's last terminal, so it stops now" out.txt || fail "exiting the last terminal should say it stops"
-  stops orca-demo || fail "the container should stop after its last terminal ends"
+  grep -q "That was demo's last terminal, so it's stopping" out.txt || fail "exiting the last terminal should say it stops"
+  [ "$(running orca-demo)" = false ] || fail "the container should stop with its last terminal"
+
+  step "a terminal that ends with no window on it stops the container by itself"
+  docker start orca-demo >/dev/null
+  docker exec orca-demo tmux new-session -d -s 1 sleep 3
+  stops orca-demo || fail "the container should stop a few seconds after its last terminal ends"
 
   step "up keeps it running without terminals"
   "$ORCA" up "$T/dev/demo" | tee out.txt
@@ -90,7 +100,7 @@ terminals() {
   step "start opens a terminal in it, and leaving that keeps it running"
   in_tty start "$T/dev/demo" | tee out.txt
   grep -q "Opening demo terminal 1" out.txt || fail "should open a terminal"
-  grep -q "stops now" out.txt && fail "a kept-up container shouldn't stop when its terminals end"
+  grep -q "stopping" out.txt && fail "a kept-up container shouldn't stop when its terminals end"
   sleep 4
   [ "$(running orca-demo)" = true ] || fail "a kept-up container should keep running after its terminals end"
 

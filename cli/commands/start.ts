@@ -152,11 +152,14 @@ async function openTerminal(ctx: Context, { name, container, folder, keepsUp }: 
   ctx.print(open.some((t) => t.name === terminal) ? `Attaching to ${name} terminal ${terminal}` : `Opening ${name} terminal ${terminal}`);
   ctx.print("  Closing this window leaves it running; exit its shell to end it.");
   const code = await ctx.docker.attach(terminalArgs(container, terminal, opts.command));
-  // Said here, where the last terminal ended, rather than the container stopping unseen
+  // Stopped here, where the last terminal ended, and said so, rather than unseen (a terminal
+  // that ends with no window on it is the keepalive's to notice)
   if (keepsUp) {
     const now = await activity(ctx, container);
-    if (!now.up && now.terminals.length === 0)
-      ctx.print(`That was ${name}'s last terminal, so it stops now. To keep it running without terminals: orca up ${tilde(ctx, folder)}`);
+    if (!now.up && now.terminals.length === 0) {
+      ctx.print(`That was ${name}'s last terminal, so it's stopping. To keep it running without terminals: orca up ${tilde(ctx, folder)}`);
+      await ctx.docker.run(["stop", container]);
+    }
   }
   return code;
 }

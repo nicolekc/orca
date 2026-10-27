@@ -306,12 +306,13 @@ test("up refuses a container or image from before orca up, saying how to get it"
   await expect(start(n.ctx, folder(n.home), { up: true })).rejects.toMatchObject({ fix: "Run: orca update" });
 });
 
-test("exiting the last terminal says the container stops now, and how to keep it running", async () => {
+test("exiting the last terminal stops the container, saying so and how to keep it running", async () => {
   const t = fakeContext();
   const dir = folder(t.home);
   t.state.containers.push({ name: "orca-app", running: true, labels: TU, workspace: dir, home: homeOf(t) });
   await start(t.ctx, dir, {});
-  expect(t.output()).toContain("That was app's last terminal, so it stops now. To keep it running without terminals: orca up ~/dev/app");
+  expect(t.output()).toContain("That was app's last terminal, so it's stopping. To keep it running without terminals: orca up ~/dev/app");
+  expect(t.state.containers[0].running).toBe(false);
 });
 
 test("leaving a terminal says nothing about stopping while it's kept up or others are open", async () => {
@@ -320,6 +321,7 @@ test("leaving a terminal says nothing about stopping while it's kept up or other
     const dir = folder(t.home);
     t.state.containers.push({ name: "orca-app", running: true, labels: TU, workspace: dir, home: homeOf(t), ...c });
     await start(t.ctx, dir, { new: true });
-    expect(t.output()).not.toContain("stops now");
+    expect(t.output()).not.toContain("stopping");
+    expect(t.state.containers[0].running).toBe(true);
   }
 });
