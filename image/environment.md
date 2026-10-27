@@ -1,7 +1,8 @@
 # About this environment
 
-This session runs in a Linux container. `/workspace` is the project folder,
-volume-mounted from the host, which may have the same files open under a different path.
+This session runs in a Linux container. `/workspace` is the project folder, shared with
+the host, where the same files have the host's own path (such as `/Users/<name>/...`):
+a path on the host the user mentions refers to the file here.
 
 - The container is occasionally recreated from its image (such as for an image update),
   like moving to a new dev environment with the same `/workspace` and `~`. Treat it as a
