@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ActionResult, LimitsView, ProjectDetail, ProjectView } from "../../server/api";
+import type { ActionResult, BoxSettingsView, ProjectDetail, ProjectView } from "../../server/api";
 import type { ProxyState } from "../../proxy";
 import type { Session } from "../../sessions";
 import type { Terminal } from "../../terminals";
 
-export type { LimitsView, ProjectDetail, ProjectView, Session, Terminal };
+export type { BoxSettingsView, ProjectDetail, ProjectView, Session, Terminal };
 
 export class ApiFailure extends Error {
   constructor(
@@ -35,8 +35,8 @@ export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () 
 export const useProject = (name: string) =>
   useQuery({ queryKey: ["projects", name], queryFn: () => request<ProjectDetail>("GET", `/api/projects/${encodeURIComponent(name)}`), ...LIVE });
 // Less often: docker stats, for what it uses, takes a second or two
-export const useLimits = (name: string) =>
-  useQuery({ queryKey: ["projects", name, "limits"], queryFn: () => request<LimitsView>("GET", `/api/projects/${encodeURIComponent(name)}/limits`), refetchInterval: 10000 });
+export const useBoxSettings = (name: string) =>
+  useQuery({ queryKey: ["projects", name, "settings"], queryFn: () => request<BoxSettingsView>("GET", `/api/projects/${encodeURIComponent(name)}/settings`), refetchInterval: 10000 });
 export const useSessions = () => useQuery({ queryKey: ["sessions"], queryFn: () => request<Session[]>("GET", "/api/sessions"), ...LIVE });
 
 /** An action against the server; everything refreshes after it. */
@@ -50,7 +50,7 @@ export const actions = {
   create: (name: string) => request<ActionResult>("POST", "/api/projects", { name }),
   open: (v: { project: string; session?: string; terminal?: string }) =>
     request<ActionResult>("POST", `${p(v.project)}/open`, { session: v.session, terminal: v.terminal }),
-  setLimits: (v: { project: string; memory?: string; cpus?: string }) => request<ActionResult>("POST", `${p(v.project)}/limits`, { memory: v.memory, cpus: v.cpus }),
+  setBoxSettings: (v: { project: string; memory?: string; cpus?: string }) => request<ActionResult>("POST", `${p(v.project)}/settings`, { memory: v.memory, cpus: v.cpus }),
   up: (project: string) => request<ActionResult>("POST", `${p(project)}/up`),
   stop: (project: string) => request<ActionResult>("POST", `${p(project)}/stop`),
   recreate: (project: string) => request<ActionResult>("POST", `${p(project)}/recreate`),

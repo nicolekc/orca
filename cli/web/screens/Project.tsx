@@ -6,7 +6,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
-import { actions, useAction, useLimits, useProject, type ProjectDetail } from "../lib/api";
+import { actions, useAction, useBoxSettings, useProject, type ProjectDetail } from "../lib/api";
 import { ago } from "../lib/utils";
 
 export function Project({ name }: { name: string }) {
@@ -62,7 +62,7 @@ function Detail({ p }: { p: ProjectDetail }) {
       {p.imageUpdate && <ImageUpdate p={p} />}
       {migrated && <Terminals p={p} />}
       {migrated && <Forwards p={p} />}
-      {migrated && <Limits p={p} />}
+      {migrated && <BoxSettings p={p} />}
       <Sessions p={p} />
       {migrated && <Danger p={p} />}
     </>
@@ -235,22 +235,22 @@ function Forwards({ p }: { p: ProjectDetail }) {
 const GB = 1024 ** 3;
 const gb = (bytes: number) => String(+(bytes / GB).toFixed(1));
 
-/** Its memory and CPUs, changed at once on the container (orca limits) */
-function Limits({ p }: { p: ProjectDetail }) {
+/** Its box settings, its container's memory and CPUs, changed at once (orca settings) */
+function BoxSettings({ p }: { p: ProjectDetail }) {
   const notify = useNotify();
-  const limits = useLimits(p.name);
-  const set = useAction(actions.setLimits);
+  const settings = useBoxSettings(p.name);
+  const set = useAction(actions.setBoxSettings);
   // What's typed, until saved; null shows the current value
   const [memory, setMemory] = useState<string | null>(null);
   const [cpus, setCpus] = useState<string | null>(null);
-  const l = limits.data;
+  const l = settings.data;
   const save = (v: { memory?: string; cpus?: string }) =>
     set.mutate({ project: p.name, ...v }, { onSuccess: (r) => (notify.done(r), setMemory(null), setCpus(null)), onError: notify.failed });
 
   const body = () => {
-    if (limits.isPending) return <Skeleton className="h-9 w-72" />;
-    if (limits.isError) return <LoadError error={limits.error} />;
-    const l = limits.data;
+    if (settings.isPending) return <Skeleton className="h-9 w-72" />;
+    if (settings.isError) return <LoadError error={settings.error} />;
+    const l = settings.data;
     const changedMemory = memory !== null && memory !== gb(l.memory);
     const changedCpus = cpus !== null && cpus !== String(l.cpus);
     const submit = (e: FormEvent) => {
@@ -258,7 +258,7 @@ function Limits({ p }: { p: ProjectDetail }) {
       save({ memory: changedMemory ? `${memory}g` : undefined, cpus: changedCpus ? cpus! : undefined });
     };
     const own = { memory: l.own.memory !== undefined, cpus: l.own.cpus !== undefined };
-    const source = own.memory && own.cpus ? "Its own limits" : own.memory ? "Its own memory, the default CPUs" : own.cpus ? "The default memory, its own CPUs" : "The defaults";
+    const source = own.memory && own.cpus ? "Its own settings" : own.memory ? "Its own memory, the default CPUs" : own.cpus ? "The default memory, its own CPUs" : "The defaults";
     return (
       <>
         <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
@@ -290,7 +290,7 @@ function Limits({ p }: { p: ProjectDetail }) {
   };
 
   return (
-    <Section title="Limits" aside={l?.total && <span className="text-xs text-muted-foreground tabular-nums">Docker has {gb(l.total.memory)} GB and {l.total.cpus} CPUs in all</span>}>
+    <Section title="Box settings" aside={l?.total && <span className="text-xs text-muted-foreground tabular-nums">Docker has {gb(l.total.memory)} GB and {l.total.cpus} CPUs in all</span>}>
       {body()}
     </Section>
   );

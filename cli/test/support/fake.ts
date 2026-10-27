@@ -17,7 +17,7 @@ export type FakeContainer = {
   terminals?: string[];
   /** Marked by orca up (the mark is emptied on every start) */
   up?: boolean;
-  /** Its limits: memory in bytes, CPUs (8 GB and 4 unless set) */
+  /** Its resources: memory in bytes, CPUs (8 GB and 4 unless set) */
   memory?: number;
   cpus?: number;
   /** What docker stats says it uses, e.g. "2.1GiB" */

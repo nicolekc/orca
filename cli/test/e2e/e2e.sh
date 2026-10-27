@@ -97,14 +97,14 @@ terminals() {
     fail "a container started with up should keep running without terminals"
   fi
 
-  step "limits change the running container at once, without restarting it"
+  step "box settings change the running container at once, without restarting it"
   started=$(docker inspect -f '{{.State.StartedAt}}' orca-demo)
-  "$ORCA" limits demo --memory 3g --cpus 2 | tee out.txt
-  grep -q "demo now has 3 GB of memory, 2 CPUs" out.txt || fail "limits should say what changed"
-  [ "$(docker inspect -f '{{.HostConfig.Memory}} {{.HostConfig.NanoCpus}}' orca-demo)" = "3221225472 2000000000" ] || fail "the container should have the new limits"
-  [ "$(docker inspect -f '{{.State.StartedAt}}' orca-demo)" = "$started" ] || fail "changing limits shouldn't restart the container"
-  "$ORCA" limits demo | tee out.txt
-  grep -q "Using .* of memory now" out.txt || fail "limits should show what it uses"
+  "$ORCA" settings demo --memory 3g --cpus 2 | tee out.txt
+  grep -q "demo now has 3 GB of memory, 2 CPUs" out.txt || fail "settings should say what changed"
+  [ "$(docker inspect -f '{{.HostConfig.Memory}} {{.HostConfig.NanoCpus}}' orca-demo)" = "3221225472 2000000000" ] || fail "the container should have the new memory and CPUs"
+  [ "$(docker inspect -f '{{.State.StartedAt}}' orca-demo)" = "$started" ] || fail "changing box settings shouldn't restart the container"
+  "$ORCA" settings demo | tee out.txt
+  grep -q "Using .* of memory now" out.txt || fail "settings should show what it uses"
 
   step "start opens a terminal in it, and leaving that keeps it running"
   in_tty start "$T/dev/demo" | tee out.txt

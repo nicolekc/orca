@@ -16,9 +16,8 @@ export type Config = {
   terminal?: string[];
   /** Features orca applies when it creates a project's home, to leave out (container-features.md) */
   without?: string[];
-  /** Each container's limits, for projects without their own (orca limits --defaults): e.g. "12g", 6 */
-  memory?: string;
-  cpus?: number;
+  /** Box settings for projects without their own (orca settings --defaults): e.g. {"memory": "12g", "cpus": 6} */
+  boxSettings?: { memory?: string; cpus?: number };
 };
 
 const DEFAULTS: Config = { proxyPort: 7320, servePort: 7321 };

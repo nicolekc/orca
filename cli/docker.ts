@@ -20,7 +20,7 @@ export type Container = {
   workspace: string | null; // host folder mounted at /workspace
   home: string | null; // host folder mounted at /home/node
   networks: string[];
-  /** Its limits: memory in bytes and CPUs, 0 for none */
+  /** Its resources: memory in bytes and CPUs, 0 for no limit */
   memory: number;
   cpus: number;
 };

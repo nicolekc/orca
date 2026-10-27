@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { del } from "./commands/delete";
 import { forward } from "./commands/forward";
-import { limits } from "./commands/limits";
 import { list } from "./commands/list";
 import { create } from "./commands/new";
+import { settings } from "./commands/settings";
 import { start } from "./commands/start";
 import { stop } from "./commands/stop";
 import { update, VERSION } from "./commands/update";
@@ -41,8 +41,9 @@ Usage:
   orca stop [project]       stop a project's container (default: this folder's), after
                             listing the terminals that ends
       --yes                 don't ask to confirm
-  orca limits [project]     show a project's memory and CPUs (default: this folder's), or
-                            change them, at once and without recreating its container
+  orca settings [project]   show a project's box settings, its container's memory and CPUs
+                            (default: this folder's), or change them, at once and without
+                            recreating its container
       --memory <amount>     e.g. 12g or 512m; "default" for the defaults again
       --cpus <n>            e.g. 6 or 1.5; "default" for the defaults again
       --defaults            show or set the defaults instead, for every project without
@@ -62,7 +63,7 @@ Usage:
   orca update               get the newest image, and the newest orca
 
 Your code is never deleted. Projects are in ~/.orca/projects; settings in
-~/.orca/config.json (e.g. {"proxyPort": 7320, "memory": "12g", "cpus": 6}).`;
+~/.orca/config.json (e.g. {"proxyPort": 7320, "boxSettings": {"memory": "12g"}}).`;
 
 async function main(all: string[]): Promise<number> {
   if (all[0] === VIEW_COMMAND) return drawView(all[1]);
@@ -119,9 +120,9 @@ async function main(all: string[]): Promise<number> {
       if (!project) throw new OrcaError("This folder isn't in a project.", "orca stop <project>");
       return stop(ctx, project, { yes: values.yes }).then(() => 0);
     }
-    case "limits":
-      if (args.length > 1) throw new OrcaError("orca limits takes one project.", "orca limits <project> --memory 12g");
-      return limits(ctx, args[0] ?? (values.defaults ? null : projectAt(ctx, process.cwd())), {
+    case "settings":
+      if (args.length > 1) throw new OrcaError("orca settings takes one project.", "orca settings <project> --memory 12g");
+      return settings(ctx, args[0] ?? (values.defaults ? null : projectAt(ctx, process.cwd())), {
         memory: values.memory,
         cpus: values.cpus,
         defaults: values.defaults,

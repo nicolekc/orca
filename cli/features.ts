@@ -6,9 +6,9 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OrcaError, type Context } from "./context";
-import { limitArgs, type Limits } from "./limits";
+import { resourceArgs, type Resources } from "./box-settings";
 
-export type Box = { name: string; folder: string; home: string; network: string; limits: Limits };
+export type Box = { name: string; folder: string; home: string; network: string; resources: Resources };
 
 /** docker run arguments for every container orca creates (the every-time features). */
 export function containerArgs(b: Box): string[] {
@@ -18,8 +18,8 @@ export function containerArgs(b: Box): string[] {
     "-v", `${b.home}:/home/node`,
     // Its own network, which only the forwards proxy also joins
     "--network", b.network,
-    // Its memory and CPUs (orca limits): 8 GB and 4 unless set
-    ...limitArgs(b.limits),
+    // Its memory and CPUs (box settings): 8 GB and 4 unless set
+    ...resourceArgs(b.resources),
     // Where `orca up` marks it to keep running; emptied on every start, so a stop ends it
     "--tmpfs", "/run/orca:mode=1777",
     // The project's name, for terminal titles, and for naming its Remote Control sessions
