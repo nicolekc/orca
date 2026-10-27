@@ -15,6 +15,7 @@ import {
 } from "../projects";
 import { readConfig } from "../config";
 import { applyCreation, checkWithout, containerArgs, workspaceFile } from "../features";
+import { applyLimits, describeLimits, effective } from "../limits";
 import { allForwards, ensureNetwork, syncProxy } from "../proxy";
 import { activity, canKeepUp, describe, hasTerminals, keepUp, listTerminals, nextName, terminalArgs } from "../terminals";
 
@@ -92,6 +93,10 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
       ctx.print("  Its node_modules is now the project folder's: install dependencies again if they're missing.");
   } else if (existing) {
     await noticeOutdated(ctx, existing.image, folder, name);
+    // Limits changed since (orca limits, or new defaults) reach it without recreating it
+    const limits = effective(ctx, name);
+    const old = await applyLimits(ctx, existing, limits);
+    if (old) ctx.print(`Limits: ${describeLimits(limits)} (was ${describeLimits(old)})`);
     if (opts.up && !canKeepUp(existing))
       throw new OrcaError(
         `${container} is from an image before orca up, so it can't be kept running without terminals.`,
@@ -111,7 +116,7 @@ export async function start(ctx: Context, path: string, opts: StartOptions): Pro
   if (opts.up && !latest.up) throw new OrcaError("The orca image is from before orca up.", "Run: orca update");
   ctx.print(`Creating ${name}: ${tilde(ctx, folder)}, home in ${tilde(ctx, home)}`);
   if (newHome) await applyCreation(ctx, home, without);
-  const create = ["--name", container, "--label", `orca.project=${name}`, ...containerArgs({ name, folder, home, network }), "orca:latest"];
+  const create = ["--name", container, "--label", `orca.project=${name}`, ...containerArgs({ name, folder, home, network, limits: effective(ctx, name) }), "orca:latest"];
   if (!latest.terminals) {
     // An image from before terminals: its main process is the first window's shell
     ctx.print("This image has no terminals yet; for them: orca update, then orca start --fresh");

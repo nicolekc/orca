@@ -17,6 +17,11 @@ export type FakeContainer = {
   terminals?: string[];
   /** Marked by orca up (the mark is emptied on every start) */
   up?: boolean;
+  /** Its limits: memory in bytes, CPUs (8 GB and 4 unless set) */
+  memory?: number;
+  cpus?: number;
+  /** What docker stats says it uses, e.g. "2.1GiB" */
+  used?: string;
 };
 
 export type FakeNetwork = { name: string; subnet: string; labels: Record<string, string> };
@@ -34,6 +39,8 @@ export type FakeState = {
   /** what `docker pull` makes orca:latest's remote tag point at */
   pulled?: string;
   failPull?: boolean;
+  /** What Docker has in all (docker info); 16 GB and 10 CPUs unless set */
+  total?: { memory: number; cpus: number };
 };
 
 /** A docker stand-in that answers from `state` and records every command. */
@@ -111,8 +118,26 @@ export function fakeDocker(state: FakeState) {
         const flag = (f: string) => rest.flatMap((a, i) => (a === f ? [rest[i + 1]] : []));
         // Like Docker, the container gets the image's labels too
         const labels = { ...imageLabels(state.latest!), ...Object.fromEntries(flag("--label").map((l) => l.split("=") as [string, string])) };
-        state.containers.push({ name: flag("--name")[0], running: true, image: state.latest!, labels, networks: [] });
+        const limit = (f: string) => rest.find((a) => a.startsWith(`${f}=`))?.slice(f.length + 1);
+        state.containers.push({ name: flag("--name")[0], running: true, image: state.latest!, labels, networks: [], memory: Number(limit("--memory")), cpus: Number(limit("--cpus")) });
         return ok("id");
+      }
+      if (cmd === "update") {
+        const c = find(rest[rest.length - 1]);
+        if (!c) return fail("No such container");
+        for (const a of rest) {
+          if (a.startsWith("--memory=")) c.memory = Number(a.slice(9));
+          if (a.startsWith("--cpus=")) c.cpus = Number(a.slice(7));
+        }
+        return ok(c.name);
+      }
+      if (cmd === "info") {
+        const t = state.total ?? { memory: 16 * 1024 ** 3, cpus: 10 };
+        return ok(`${t.memory} ${t.cpus}\n`);
+      }
+      if (cmd === "stats") {
+        const c = find(rest[rest.length - 1]);
+        return c?.running ? ok(`${c.used ?? "1GiB"} / ${c.memory}B\n`) : fail("not running");
       }
       if (cmd === "start") {
         const c = find(rest[rest.length - 1]);
@@ -163,6 +188,7 @@ function inspected(c: FakeContainer) {
     Config: { Labels: c.labels ?? null },
     Mounts: mounts,
     NetworkSettings: { Networks: Object.fromEntries((c.networks ?? []).map((n) => [n, {}])) },
+    HostConfig: { Memory: c.memory ?? 8 * 1024 ** 3, NanoCpus: (c.cpus ?? 4) * 1e9 },
   };
 }
 

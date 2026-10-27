@@ -6,7 +6,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
-import { actions, useAction, useProject, type ProjectDetail } from "../lib/api";
+import { actions, useAction, useLimits, useProject, type ProjectDetail } from "../lib/api";
 import { ago } from "../lib/utils";
 
 export function Project({ name }: { name: string }) {
@@ -62,6 +62,7 @@ function Detail({ p }: { p: ProjectDetail }) {
       {p.imageUpdate && <ImageUpdate p={p} />}
       {migrated && <Terminals p={p} />}
       {migrated && <Forwards p={p} />}
+      {migrated && <Limits p={p} />}
       <Sessions p={p} />
       {migrated && <Danger p={p} />}
     </>
@@ -227,6 +228,70 @@ function Forwards({ p }: { p: ProjectDetail }) {
           Forward
         </Button>
       </form>
+    </Section>
+  );
+}
+
+const GB = 1024 ** 3;
+const gb = (bytes: number) => String(+(bytes / GB).toFixed(1));
+
+/** Its memory and CPUs, changed at once on the container (orca limits) */
+function Limits({ p }: { p: ProjectDetail }) {
+  const notify = useNotify();
+  const limits = useLimits(p.name);
+  const set = useAction(actions.setLimits);
+  // What's typed, until saved; null shows the current value
+  const [memory, setMemory] = useState<string | null>(null);
+  const [cpus, setCpus] = useState<string | null>(null);
+  const l = limits.data;
+  const save = (v: { memory?: string; cpus?: string }) =>
+    set.mutate({ project: p.name, ...v }, { onSuccess: (r) => (notify.done(r), setMemory(null), setCpus(null)), onError: notify.failed });
+
+  const body = () => {
+    if (limits.isPending) return <Skeleton className="h-9 w-72" />;
+    if (limits.isError) return <LoadError error={limits.error} />;
+    const l = limits.data;
+    const changedMemory = memory !== null && memory !== gb(l.memory);
+    const changedCpus = cpus !== null && cpus !== String(l.cpus);
+    const submit = (e: FormEvent) => {
+      e.preventDefault();
+      save({ memory: changedMemory ? `${memory}g` : undefined, cpus: changedCpus ? cpus! : undefined });
+    };
+    const own = { memory: l.own.memory !== undefined, cpus: l.own.cpus !== undefined };
+    const source = own.memory && own.cpus ? "Its own limits" : own.memory ? "Its own memory, the default CPUs" : own.cpus ? "The default memory, its own CPUs" : "The defaults";
+    return (
+      <>
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Memory, GB
+            <Input inputMode="decimal" value={memory ?? gb(l.memory)} onChange={(e) => setMemory(e.target.value)} className="w-24 tabular-nums" />
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            CPUs
+            <Input inputMode="decimal" value={cpus ?? String(l.cpus)} onChange={(e) => setCpus(e.target.value)} className="w-24 tabular-nums" />
+          </label>
+          <Button type="submit" size="sm" variant="outline" disabled={!(changedMemory || changedCpus) || set.isPending}>
+            Save
+          </Button>
+          {(own.memory || own.cpus) && (
+            <Button type="button" size="sm" variant="ghost" disabled={set.isPending} onClick={() => save({ memory: "default", cpus: "default" })}>
+              Use the defaults
+            </Button>
+          )}
+        </form>
+        <p className="mt-2 text-sm text-pretty text-muted-foreground">
+          {[l.used && `Using ${l.used} now`, source, "Changes apply at once, without a restart"].filter(Boolean).join(" · ")}
+        </p>
+        {l.total && l.memory > l.total.memory && (
+          <p className="mt-1 text-sm text-warning">More memory than Docker has, so Docker's own limit applies. Raise it in Docker Desktop's Settings → Resources.</p>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <Section title="Limits" aside={l?.total && <span className="text-xs text-muted-foreground tabular-nums">Docker has {gb(l.total.memory)} GB and {l.total.cpus} CPUs in all</span>}>
+      {body()}
     </Section>
   );
 }

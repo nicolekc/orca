@@ -20,6 +20,9 @@ export type Container = {
   workspace: string | null; // host folder mounted at /workspace
   home: string | null; // host folder mounted at /home/node
   networks: string[];
+  /** Its limits: memory in bytes and CPUs, 0 for none */
+  memory: number;
+  cpus: number;
 };
 
 export const realDocker: Docker = {
@@ -51,6 +54,7 @@ type Inspected = {
   Config: { Labels: Record<string, string> | null };
   Mounts: { Source: string; Destination: string }[];
   NetworkSettings?: { Networks?: Record<string, unknown> | null };
+  HostConfig?: { Memory?: number; NanoCpus?: number };
 };
 
 export function parseContainer(c: Inspected): Container {
@@ -66,5 +70,7 @@ export function parseContainer(c: Inspected): Container {
     workspace: mount("/workspace"),
     home: mount("/home/node"),
     networks: Object.keys(c.NetworkSettings?.Networks ?? {}),
+    memory: c.HostConfig?.Memory ?? 0,
+    cpus: (c.HostConfig?.NanoCpus ?? 0) / 1e9,
   };
 }

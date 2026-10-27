@@ -75,6 +75,23 @@ test("a stopped project can start without a terminal, kept up", async () => {
   expect(launched).toEqual([]);
 });
 
+test("limits: change memory and CPUs at once, then go back to the defaults", async () => {
+  const { screen, state } = await open("/p/app", [{ name: "app", container: "running" }]);
+  const limits = await section(screen, "Limits");
+  const memory = (await within(limits).findByLabelText("Memory, GB")) as HTMLInputElement;
+  expect(memory.value).toBe("8");
+  expect(within(limits).getByText(/The defaults · Changes apply at once/)).toBeTruthy();
+  type(memory, "12");
+  fireEvent.click(within(limits).getByRole("button", { name: "Save" }));
+  await screen.findByText(/app now has 12 GB of memory/);
+  expect(state.containers[0].memory).toBe(12 * 1024 ** 3);
+  expect(await within(limits).findByText(/Its own memory, the default CPUs/)).toBeTruthy();
+
+  fireEvent.click(within(limits).getByRole("button", { name: "Use the defaults" }));
+  await screen.findByText(/app now has 8 GB of memory/);
+  expect(state.containers[0].memory).toBe(8 * 1024 ** 3);
+});
+
 test("a container from before terminals says so, and Stop asks, since it ends any open shells", async () => {
   const { screen } = await open("/p/app", [{ name: "app", container: "running", old: true }]);
   expect(await screen.findByText(/from before terminals/)).toBeTruthy();

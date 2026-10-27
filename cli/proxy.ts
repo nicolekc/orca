@@ -107,7 +107,7 @@ export async function syncProxy(ctx: Context): Promise<ProxyState> {
         throw new OrcaError(`Port ${port} on this Mac is already taken, so the forwards proxy can't start.`, `Choose another in ${tilde(ctx, join(ctx.orcaDir, "config.json"))}: {"proxyPort": ${port + 1}}`);
       throw new OrcaError(`The forwards proxy didn't start: ${r.stderr.trim()}`);
     }
-    proxy = { name: PROXY, running: true, startedAt: 0, image: "", labels: {}, workspace: null, home: null, networks: [] };
+    proxy = { name: PROXY, running: true, startedAt: 0, image: "", labels: {}, workspace: null, home: null, networks: [], memory: 0, cpus: 0 };
   } else if (!proxy.running) {
     await docker(ctx, ["start", PROXY]);
   }
