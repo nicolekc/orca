@@ -1,7 +1,9 @@
 # About this environment
 
-This session runs in a Linux container. `/workspace` is the project folder,
-volume-mounted from the host, which may have the same files open under a different path.
+This session runs in a Linux container. `/workspace` is the project folder, on persistent
+storage mounted from elsewhere, so nothing saved there (files, commits) should contain the
+path `/workspace`: refer to a file by its path in its git repo (`src/app.ts`), or relative to
+the file referring to it. Commands, and temporary files outside it, can use the path as usual.
 
 - The container is occasionally recreated from its image (such as for an image update),
   like moving to a new dev environment with the same `/workspace` and `~`. Treat it as a
