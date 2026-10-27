@@ -2,10 +2,12 @@ import { del } from "../commands/delete";
 import { start } from "../commands/start";
 import { stop } from "../commands/stop";
 import { forward } from "../commands/forward";
+import { settings } from "../commands/settings";
 import { makeRecord } from "../commands/new";
 import { OrcaError, tilde, type Context } from "../context";
 import { stateOf, type State } from "../present";
 import { inspectImage, latestImage, loadProjects, type Project } from "../projects";
+import { dockerTotal, effective, memoryUsed, readBoxSettings, type BoxSettings, type Effective, type Resources } from "../box-settings";
 import { allForwards, proxyState, urlFor } from "../proxy";
 import { listSessions, type Session } from "../sessions";
 import { openInTerminal } from "../terminal";
@@ -33,6 +35,8 @@ export type ProjectDetail = ProjectView & {
   terminals: Terminal[] | null;
   image: { container: string | null; newest: string | null };
 };
+/** A project's box settings: what its container gets and where each comes from, its own, what it uses, and what Docker has in all */
+export type BoxSettingsView = Effective & { own: BoxSettings; used: string | null; total: Resources | null };
 export type ActionResult = { messages: string[] };
 export type ApiError = { error: string; fix?: string };
 
@@ -111,6 +115,16 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       if (p.container?.running) throw new OrcaError(`${p.name} is running.`, "Stop it first, then recreate it.");
       await openInTerminal(ctx, [opts.orca, "start", "--fresh", folder]);
       return done(`Recreating ${p.name} in a terminal.`);
+    }
+    if (action === "settings" && method === "GET") {
+      const used = p.container?.running ? await memoryUsed(ctx, p.container.name) : null;
+      return { ...effective(ctx, p.name), own: readBoxSettings(ctx, p.name), used, total: await dockerTotal(ctx) } satisfies BoxSettingsView;
+    }
+    if (action === "settings" && method === "POST") {
+      const text = (v: unknown) => (v === undefined ? undefined : typeof v === "string" ? v : String(v));
+      // The page shows what Docker has beside the form already
+      const r = await capture((c) => settings(c, p.name, { memory: text(b.memory), cpus: text(b.cpus) }));
+      return { messages: r.messages.filter((m) => !m.startsWith("Docker has")) };
     }
     if (action === "forwards" && method === "POST") return capture((c) => forward(c, { project: p.name, add: port(b.port) }));
     if (action === "forwards" && method === "DELETE" && arg) return capture((c) => forward(c, { project: p.name, remove: port(arg) }));

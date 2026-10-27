@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ActionResult, ProjectDetail, ProjectView } from "../../server/api";
+import type { ActionResult, BoxSettingsView, ProjectDetail, ProjectView } from "../../server/api";
 import type { ProxyState } from "../../proxy";
 import type { Session } from "../../sessions";
 import type { Terminal } from "../../terminals";
 
-export type { ProjectDetail, ProjectView, Session, Terminal };
+export type { BoxSettingsView, ProjectDetail, ProjectView, Session, Terminal };
 
 export class ApiFailure extends Error {
   constructor(
@@ -34,6 +34,9 @@ export const useInfo = () => useQuery({ queryKey: ["info"], queryFn: () => reque
 export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () => request<ProjectView[]>("GET", "/api/projects"), ...LIVE });
 export const useProject = (name: string) =>
   useQuery({ queryKey: ["projects", name], queryFn: () => request<ProjectDetail>("GET", `/api/projects/${encodeURIComponent(name)}`), ...LIVE });
+// Less often: docker stats, for what it uses, takes a second or two
+export const useBoxSettings = (name: string) =>
+  useQuery({ queryKey: ["projects", name, "settings"], queryFn: () => request<BoxSettingsView>("GET", `/api/projects/${encodeURIComponent(name)}/settings`), refetchInterval: 10000 });
 export const useSessions = () => useQuery({ queryKey: ["sessions"], queryFn: () => request<Session[]>("GET", "/api/sessions"), ...LIVE });
 
 /** An action against the server; everything refreshes after it. */
@@ -47,6 +50,7 @@ export const actions = {
   create: (name: string) => request<ActionResult>("POST", "/api/projects", { name }),
   open: (v: { project: string; session?: string; terminal?: string }) =>
     request<ActionResult>("POST", `${p(v.project)}/open`, { session: v.session, terminal: v.terminal }),
+  setBoxSettings: (v: { project: string; memory?: string; cpus?: string }) => request<ActionResult>("POST", `${p(v.project)}/settings`, { memory: v.memory, cpus: v.cpus }),
   up: (project: string) => request<ActionResult>("POST", `${p(project)}/up`),
   stop: (project: string) => request<ActionResult>("POST", `${p(project)}/stop`),
   recreate: (project: string) => request<ActionResult>("POST", `${p(project)}/recreate`),

@@ -72,6 +72,22 @@ test("projects say whether they're kept up; starting one kept up from the page r
   expect((await t.call("GET", "/api/projects/app")).body).toMatchObject({ state: "running", keptUp: true });
 });
 
+test("box settings: what it has, where each comes from, what it uses; setting them reports the outcome", async () => {
+  const t = setup();
+  t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: { "orca.terminals": "1" }, home: join(t.record, "home"), used: "2.1GiB" });
+  expect((await t.call("GET", "/api/projects/app/settings")).body).toEqual({
+    memory: 8 * 1024 ** 3,
+    cpus: 4,
+    from: { memory: "orca", cpus: "orca" },
+    own: {},
+    used: "2.1GiB",
+    total: { memory: 16 * 1024 ** 3, cpus: 10 },
+  });
+  expect((await t.call("POST", "/api/projects/app/settings", { memory: "12g" })).body).toEqual({ messages: ["app now has 12 GB of memory, 4 CPUs (was 8 GB of memory, 4 CPUs)."] });
+  expect((await t.call("GET", "/api/projects/app/settings")).body).toMatchObject({ memory: 12 * 1024 ** 3, own: { memory: "12g" } });
+  expect((await t.call("POST", "/api/projects/app/settings", { cpus: "lots" })).status).toBe(400);
+});
+
 test("a container from before terminals has none to list", async () => {
   const t = setup();
   t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: {}, home: join(t.record, "home") });

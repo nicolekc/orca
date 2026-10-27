@@ -13,7 +13,7 @@ const project = (name: string, extra: Partial<Project> = {}): Project => ({
   ...extra,
 });
 
-const running = { name: "orca-a", running: true, startedAt: 1, image: "x", labels: {}, workspace: null, home: null, networks: [] };
+const running = { name: "orca-a", running: true, startedAt: 1, image: "x", labels: {}, workspace: null, home: null, networks: [], memory: 0, cpus: 0 };
 const DOWN = "\u001B[B";
 const tick = () => new Promise((r) => setTimeout(r, 20));
 

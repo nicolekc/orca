@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { OrcaError, tilde, type Context } from "./context";
 import { checkWithout } from "./features";
@@ -16,6 +16,8 @@ export type Config = {
   terminal?: string[];
   /** Features orca applies when it creates a project's home, to leave out (container-features.md) */
   without?: string[];
+  /** Box settings for projects without their own (orca settings --defaults): e.g. {"memory": "12g", "cpus": 6} */
+  boxSettings?: { memory?: string; cpus?: number };
 };
 
 const DEFAULTS: Config = { proxyPort: 7320, servePort: 7321 };
@@ -43,4 +45,13 @@ export function readConfig(ctx: Context): Config {
     checkWithout(config.without, `without in ${tilde(ctx, file)}`);
   }
   return config;
+}
+
+/** Sets (or, for undefined, removes) keys in config.json, keeping the rest of it as it is. */
+export function writeConfig(ctx: Context, changes: Partial<Config>) {
+  const file = configFile(ctx);
+  const raw = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>) : {};
+  for (const [k, v] of Object.entries(changes)) if (v === undefined) delete raw[k];
+  else raw[k] = v;
+  writeFileSync(file, JSON.stringify(raw, null, 2) + "\n");
 }

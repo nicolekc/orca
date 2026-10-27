@@ -6,6 +6,7 @@ import { del } from "./commands/delete";
 import { forward } from "./commands/forward";
 import { list } from "./commands/list";
 import { create } from "./commands/new";
+import { settings } from "./commands/settings";
 import { start } from "./commands/start";
 import { stop } from "./commands/stop";
 import { update, VERSION } from "./commands/update";
@@ -40,6 +41,13 @@ Usage:
   orca stop [project]       stop a project's container (default: this folder's), after
                             listing the terminals that ends
       --yes                 don't ask to confirm
+  orca settings [project]   show a project's box settings, its container's memory and CPUs
+                            (default: this folder's), or change them, at once and without
+                            recreating its container
+      --memory <amount>     e.g. 12g or 512m; "default" for the defaults again
+      --cpus <n>            e.g. 6 or 1.5; "default" for the defaults again
+      --defaults            show or set the defaults instead, for every project without
+                            its own (orca's are 8g and 4 CPUs)
   orca serve                open the dashboard: every project, forward and session
       --no-open             print its link instead of opening the browser
   orca new <name>           make a project, its code in ~/.orca/projects/<name>/workspace
@@ -55,7 +63,7 @@ Usage:
   orca update               get the newest image, and the newest orca
 
 Your code is never deleted. Projects are in ~/.orca/projects; settings in
-~/.orca/config.json (e.g. {"proxyPort": 7320}).`;
+~/.orca/config.json (e.g. {"proxyPort": 7320, "boxSettings": {"memory": "12g"}}).`;
 
 async function main(all: string[]): Promise<number> {
   if (all[0] === VIEW_COMMAND) return drawView(all[1]);
@@ -76,6 +84,9 @@ async function main(all: string[]): Promise<number> {
       yes: { type: "boolean" },
       remove: { type: "string" },
       project: { type: "string" },
+      memory: { type: "string" },
+      cpus: { type: "string" },
+      defaults: { type: "boolean" },
       "no-open": { type: "boolean" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean" },
@@ -109,6 +120,13 @@ async function main(all: string[]): Promise<number> {
       if (!project) throw new OrcaError("This folder isn't in a project.", "orca stop <project>");
       return stop(ctx, project, { yes: values.yes }).then(() => 0);
     }
+    case "settings":
+      if (args.length > 1) throw new OrcaError("orca settings takes one project.", "orca settings <project> --memory 12g");
+      return settings(ctx, args[0] ?? (values.defaults ? null : projectAt(ctx, process.cwd())), {
+        memory: values.memory,
+        cpus: values.cpus,
+        defaults: values.defaults,
+      }).then(() => 0);
     case "new":
       return create(ctx, one("name"), { without: values.without });
     case "list":
