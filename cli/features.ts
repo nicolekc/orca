@@ -18,6 +18,8 @@ export function containerArgs(b: Box): string[] {
     // Its own network, which only the forwards proxy also joins
     "--network", b.network,
     "--memory=8g", "--cpus=4",
+    // Where `orca up` marks it to keep running; emptied on every start, so a stop ends it
+    "--tmpfs", "/run/orca:mode=1777",
     // The project's name, for terminal titles, and for naming its Remote Control sessions
     // (otherwise the container's random hostname)
     "-e", `ORCA_PROJECT=${b.name}`,

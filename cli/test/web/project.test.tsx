@@ -56,6 +56,25 @@ test("with no terminals open, Stop doesn't ask", async () => {
   expect(state.containers[0].running).toBe(false);
 });
 
+test("the terminals say when it stops; Keep running keeps it up until stopped", async () => {
+  const { screen, state } = await open("/p/app", [{ name: "app", container: "running" }]);
+  const terminals = await section(screen, "Terminals");
+  expect(await within(terminals).findByText("It stops when its last terminal ends.")).toBeTruthy();
+  fireEvent.click(within(terminals).getByRole("button", { name: "Keep running" }));
+  await screen.findByText(/app is up/);
+  expect(state.containers[0].up).toBe(true);
+  expect(await within(terminals).findByText(/Kept up: it runs until you stop it/)).toBeTruthy();
+  expect(within(terminals).queryByRole("button", { name: "Keep running" })).toBeNull();
+});
+
+test("a stopped project can start without a terminal, kept up", async () => {
+  const { screen, state, launched } = await open("/p/app", [{ name: "app", container: "stopped" }]);
+  fireEvent.click(await screen.findByRole("button", { name: "Start without a terminal" }));
+  await screen.findByText(/app is up/);
+  expect(state.containers[0]).toMatchObject({ running: true, up: true });
+  expect(launched).toEqual([]);
+});
+
 test("a container from before terminals says so, and Stop asks, since it ends any open shells", async () => {
   const { screen } = await open("/p/app", [{ name: "app", container: "running", old: true }]);
   expect(await screen.findByText(/from before terminals/)).toBeTruthy();

@@ -1,12 +1,12 @@
 import { tilde, type Context } from "../context";
-import { stateOf, symbol, IMAGE_UPDATE } from "../present";
+import { keptBy, stateOf, symbol, IMAGE_UPDATE } from "../present";
 import { loadProjects } from "../projects";
 import { allForwards, proxyState, urlFor } from "../proxy";
-import { openTerminals } from "../terminals";
+import { activities } from "../terminals";
 
 export async function list(ctx: Context, opts: { json?: boolean }): Promise<void> {
   const projects = await loadProjects(ctx);
-  const terminals = await openTerminals(ctx, projects);
+  const live = await activities(ctx, projects);
   if (opts.json) {
     const forwards = allForwards(ctx);
     const rows = projects.map((p) => ({
@@ -15,7 +15,8 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
       state: stateOf(p),
       imageUpdate: p.outdated,
       container: p.container?.name ?? null,
-      terminals: terminals.get(p.name) ?? [],
+      terminals: live.get(p.name)?.terminals ?? [],
+      keptUp: live.get(p.name)?.up ?? false,
       forwards: forwards.filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
     }));
     ctx.print(JSON.stringify(rows, null, 2));
@@ -27,8 +28,8 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
   }
   const width = Math.max(...projects.map((p) => p.name.length));
   const label = (p: (typeof projects)[number]) => {
-    const n = terminals.get(p.name)?.length;
-    return `${symbol[stateOf(p)]} ${stateOf(p)}${n ? `, ${n} terminal${n === 1 ? "" : "s"}` : ""}`;
+    const kept = keptBy(live.get(p.name));
+    return `${symbol[stateOf(p)]} ${stateOf(p)}${kept ? `, ${kept}` : ""}`;
   };
   const stateWidth = Math.max(...projects.map((p) => label(p).length));
   for (const p of projects) {

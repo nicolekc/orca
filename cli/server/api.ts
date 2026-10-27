@@ -1,4 +1,5 @@
 import { del } from "../commands/delete";
+import { start } from "../commands/start";
 import { stop } from "../commands/stop";
 import { forward } from "../commands/forward";
 import { makeRecord } from "../commands/new";
@@ -8,7 +9,7 @@ import { inspectImage, latestImage, loadProjects, type Project } from "../projec
 import { allForwards, proxyState, urlFor } from "../proxy";
 import { listSessions, type Session } from "../sessions";
 import { openInTerminal } from "../terminal";
-import { hasTerminals, listTerminals, openTerminals, type Terminal } from "../terminals";
+import { activities, activity, canKeepUp, hasTerminals, listTerminals, type Activity, type Terminal } from "../terminals";
 
 /** What the dashboard shows for a project. */
 export type ProjectView = {
@@ -20,6 +21,10 @@ export type ProjectView = {
   forwards: { port: number; url: string }[];
   /** How many terminals are open in its container */
   terminalCount: number;
+  /** Started with orca up: it runs until stopped, terminals or not */
+  keptUp: boolean;
+  /** Its container can be kept up (it's from an image with orca up) */
+  canKeepUp: boolean;
   lastUsed: number;
 };
 export type ProjectDetail = ProjectView & {
@@ -55,8 +60,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     if (!name) {
       if (method === "GET") {
         const projects = await loadProjects(ctx);
-        const terminals = await openTerminals(ctx, projects);
-        return projects.map((p) => view(p, terminals.get(p.name)));
+        const live = await activities(ctx, projects);
+        return projects.map((p) => view(p, live.get(p.name)));
       }
       if (method === "POST") {
         const workspace = makeRecord(ctx, String((await json(req)).name ?? ""));
@@ -72,8 +77,9 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     if (method === "GET" && !action) {
       const latest = await latestImage(ctx);
       const container = p.container ? ((await inspectImage(ctx, p.container.image))?.created ?? null) : null;
-      const terminals = p.container && !hasTerminals(p.container) ? null : p.container?.running ? await listTerminals(ctx, p.container.name) : [];
-      return { ...view(p, terminals ?? []), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
+      const live = p.container?.running && hasTerminals(p.container) ? await activity(ctx, p.container.name) : undefined;
+      const terminals = p.container && !hasTerminals(p.container) ? null : (live?.terminals ?? []);
+      return { ...view(p, live), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
     }
     const b = method === "GET" ? {} : await json(req);
 
@@ -96,6 +102,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       await openInTerminal(ctx, [opts.orca, "start", folder, "--new"]);
       return done(`Opening a new terminal in ${p.name}.`);
     }
+    // Just the outcome: not what starting it printed on the way
+    if (method === "POST" && action === "up") return { messages: (await capture((c) => start(c, startable(p), { up: true }))).messages.slice(-1) };
     // The page's confirmation already listed the terminals it ends: just the outcome
     if (method === "POST" && action === "stop") return { messages: (await capture((c) => stop(c, p.name, { yes: true }))).messages.slice(-1) };
     if (method === "POST" && action === "recreate") {
@@ -113,7 +121,7 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     throw new NotFound("No such API.");
   }
 
-  function view(p: Project, terminals: Terminal[] = []): ProjectView {
+  function view(p: Project, live?: Activity): ProjectView {
     return {
       name: p.name,
       folder: p.folder ? tilde(ctx, p.folder) : null,
@@ -121,7 +129,10 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       imageUpdate: p.outdated,
       managed: p.managed,
       forwards: allForwards(ctx).filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
-      terminalCount: terminals.length,
+      terminalCount: live?.terminals.length ?? 0,
+      keptUp: live?.up ?? false,
+      // A project without a container yet gets the newest image's
+      canKeepUp: p.container ? canKeepUp(p.container) : true,
       lastUsed: Math.max(p.container?.startedAt ?? 0, p.legacy?.startedAt ?? 0),
     };
   }

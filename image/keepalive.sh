@@ -1,19 +1,21 @@
 #!/bin/sh
-# The container's main process. It keeps the container running while any terminal (tmux)
-# or other shell (docker exec, such as an editor attached to the container) is open, and
-# exits once none has been for a minute, which stops the container. The minute also covers
-# the moment between the container starting and its first terminal opening.
+# The container's main process: the container runs while it does. Started with `orca up`
+# (which leaves /run/orca/up, emptied on every start), it runs until stopped. Otherwise it
+# runs while any terminal (tmux session) is open, and stops a few seconds after the last one
+# ends; until the first opens, it waits up to ORCA_FIRST_TERMINAL_SECONDS.
 trap 'exit 0' TERM INT
-grace=${ORCA_IDLE_SECONDS:-60}
-idle=0
+first=${ORCA_FIRST_TERMINAL_SECONDS:-15}
+waited=0
+seen=false
 while :; do
-  # Processes docker exec starts have no parent in the container (ppid 0)
-  if tmux has-session 2>/dev/null || ps -e -o ppid= -o pid= | awk '$1 == 0 && $2 != 1 { found = 1 } END { exit !found }'; then
-    idle=0
-  else
-    idle=$((idle + 5))
+  if [ -e /run/orca/up ]; then
+    :
+  elif tmux has-session 2>/dev/null; then
+    seen=true
+  elif $seen || [ "$waited" -ge "$first" ]; then
+    exit 0
   fi
-  [ "$idle" -ge "$grace" ] && exit 0
-  sleep 5 &
+  sleep 2 &
   wait $!
+  waited=$((waited + 2))
 done

@@ -126,11 +126,13 @@ RUN { echo "developer_instructions = '''"; cat /etc/claude-code/CLAUDE.md; echo 
 # A UTF-8 locale: without one tmux shows non-ASCII characters (Claude's ⎿, ●, ❯) as _
 ENV LANG=C.UTF-8
 # Terminals: tmux's defaults for them (a project's ~/.tmux.conf can change any of it), and the
-# main process, which keeps the container running while any terminal or other shell is open
+# main process, which keeps the container running while any terminal is open, or until it's
+# stopped if started with orca up
 COPY image/tmux.conf /etc/tmux.conf
 COPY --chmod=755 image/keepalive.sh /usr/local/bin/orca-keepalive
-# Tells orca this image has terminals (containers made from older images open plain shells)
-LABEL orca.terminals="1"
+# Tells orca this image has terminals (containers made from older images open plain shells),
+# and can be kept up (older ones run a minute past their last terminal or other shell)
+LABEL orca.terminals="1" orca.up="1"
 
 USER $USERNAME
 WORKDIR /workspace

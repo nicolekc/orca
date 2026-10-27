@@ -10,9 +10,11 @@ import { start } from "./commands/start";
 import { stop } from "./commands/stop";
 import { update, VERSION } from "./commands/update";
 import { OrcaError, realContext, type Context } from "./context";
+import { keptBy } from "./present";
 import { loadProjects } from "./projects";
 import { serve } from "./server/serve";
 import { projectAt } from "./proxy";
+import { activities } from "./terminals";
 import { drawView, show, VIEW_COMMAND } from "./ui/show";
 
 const HELP = `orca: each project in its own container, with its own home
@@ -22,6 +24,7 @@ Usage:
   orca start [folder]       open a terminal in a folder's container (default: this one),
                             starting or creating it. Terminals keep running when their
                             window closes; with any open, it asks which to attach to.
+                            The container stops when its last terminal ends.
       --new                 open a new terminal without asking
       --terminal <name>     attach to that terminal (or open it under that name)
       --fresh               recreate the container, e.g. on a newer image
@@ -30,9 +33,12 @@ Usage:
                             workspace-file (container-features.md)
       -- <command>          run a command in a new terminal instead of a shell,
                             e.g. -- claude --resume
+  orca up [folder]          start a folder's container (creating it if need be) without a
+                            terminal, to keep running until orca stop, with or without
+                            terminals: for an editor attached to it, or a server
+      --fresh, --without    as for start
   orca stop [project]       stop a project's container (default: this folder's), after
-                            listing the terminals that ends; it also stops by itself a
-                            minute after its last terminal ends
+                            listing the terminals that ends
       --yes                 don't ask to confirm
   orca serve                open the dashboard: every project, forward and session
       --no-open             print its link instead of opening the browser
@@ -96,6 +102,8 @@ async function main(all: string[]): Promise<number> {
     case "start":
       if (inner && inner.length === 0) throw new OrcaError("Nothing after --.", "orca start [folder] -- <command>");
       return start(ctx, args[0] ?? ".", { fresh: values.fresh, command: inner, new: values.new, terminal: values.terminal, without: values.without });
+    case "up":
+      return start(ctx, args[0] ?? ".", { up: true, fresh: values.fresh, without: values.without });
     case "stop": {
       const project = args[0] ?? projectAt(ctx, process.cwd());
       if (!project) throw new OrcaError("This folder isn't in a project.", "orca stop <project>");
@@ -133,7 +141,9 @@ async function main(all: string[]): Promise<number> {
 async function pick(ctx: Context): Promise<number> {
   const projects = await loadProjects(ctx);
   if (!ctx.ask) return list(ctx, {}).then(() => 0);
-  const choice = (await show(join(ctx.orcaDir, "orca.log"), "picker", { projects, home: ctx.home })) ?? { action: "quit" };
+  const live = await activities(ctx, projects);
+  const kept = Object.fromEntries([...live].map(([name, a]) => [name, keptBy(a)]));
+  const choice = (await show(join(ctx.orcaDir, "orca.log"), "picker", { projects, home: ctx.home, kept })) ?? { action: "quit" };
 
   switch (choice.action) {
     case "start": {
