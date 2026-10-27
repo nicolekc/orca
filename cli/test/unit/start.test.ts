@@ -270,3 +270,56 @@ test("a project made by orca new starts under its own name, not 'workspace'", as
   await start(t.ctx, join(record, "workspace"), {});
   expect(t.calls.find((c) => c[0] === "run")).toContain("orca-web");
 });
+
+const TU = { ...T, "orca.up": "1" };
+
+test("up starts a stopped container without a terminal, marked to keep running", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", labels: TU, workspace: dir, home: homeOf(t) });
+  await start(t.ctx, dir, { up: true });
+  expect(t.calls).toContainEqual(["start", "orca-app"]);
+  expect(t.attached).toEqual([]);
+  expect(t.state.containers[0].up).toBe(true);
+  expect(t.output()).toContain("app is up: it keeps running, with or without terminals, until orca stop app.");
+});
+
+test("up creates a new project's container, with somewhere to mark it, and no terminal", async () => {
+  const t = fakeContext();
+  await start(t.ctx, folder(t.home), { up: true });
+  const run = t.calls.find((c) => c[0] === "run")!;
+  // Emptied on every start, so stopping it ends being kept up
+  expect(run.join(" ")).toContain("--tmpfs /run/orca:mode=1777");
+  expect(t.attached).toEqual([]);
+  expect(t.state.containers[0].up).toBe(true);
+});
+
+test("up refuses a container or image from before orca up, saying how to get it", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", labels: T, workspace: dir, home: homeOf(t) });
+  await expect(start(t.ctx, dir, { up: true })).rejects.toMatchObject({
+    message: expect.stringContaining("from an image before orca up"),
+    fix: expect.stringContaining("orca start --fresh ~/dev/app"),
+  });
+  const n = fakeContext({ noUp: ["sha256:new"] });
+  await expect(start(n.ctx, folder(n.home), { up: true })).rejects.toMatchObject({ fix: "Run: orca update" });
+});
+
+test("exiting the last terminal says the container stops now, and how to keep it running", async () => {
+  const t = fakeContext();
+  const dir = folder(t.home);
+  t.state.containers.push({ name: "orca-app", running: true, labels: TU, workspace: dir, home: homeOf(t) });
+  await start(t.ctx, dir, {});
+  expect(t.output()).toContain("That was app's last terminal, so it stops now. To keep it running without terminals: orca up ~/dev/app");
+});
+
+test("leaving a terminal says nothing about stopping while it's kept up or others are open", async () => {
+  for (const c of [{ up: true }, { terminals: [term("1")] }]) {
+    const t = fakeContext();
+    const dir = folder(t.home);
+    t.state.containers.push({ name: "orca-app", running: true, labels: TU, workspace: dir, home: homeOf(t), ...c });
+    await start(t.ctx, dir, { new: true });
+    expect(t.output()).not.toContain("stops now");
+  }
+});

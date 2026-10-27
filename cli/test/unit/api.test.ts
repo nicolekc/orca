@@ -64,6 +64,14 @@ test("stopping from the page reports only the outcome: its dialog listed the ter
   expect(t.state.containers[0].running).toBe(false);
 });
 
+test("projects say whether they're kept up; starting one kept up from the page reports the outcome", async () => {
+  const t = setup();
+  t.state.containers.push({ name: "orca-app", image: "sha256:new", labels: { "orca.terminals": "1", "orca.up": "1" }, workspace: t.folder, home: join(t.record, "home") });
+  expect((await t.call("GET", "/api/projects")).body[0]).toMatchObject({ keptUp: false, canKeepUp: true });
+  expect((await t.call("POST", "/api/projects/app/up", {})).body).toEqual({ messages: ["app is up: it keeps running, with or without terminals, until orca stop app."] });
+  expect((await t.call("GET", "/api/projects/app")).body).toMatchObject({ state: "running", keptUp: true });
+});
+
 test("a container from before terminals has none to list", async () => {
   const t = setup();
   t.state.containers.push({ name: "orca-app", running: true, image: "sha256:new", labels: {}, home: join(t.record, "home") });

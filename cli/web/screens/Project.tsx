@@ -102,22 +102,33 @@ function Terminals({ p }: { p: ProjectDetail }) {
   const notify = useNotify();
   const open = useAction(actions.open);
   const stop = useAction(actions.stop);
+  const up = useAction(actions.up);
   const [confirming, setConfirming] = useState(false);
   const running = p.state === "running";
   const terminals = p.terminals ?? [];
   const stopNow = () => stop.mutate(p.name, { onSuccess: (r) => (notify.done(r), setConfirming(false)), onError: notify.failed });
+  // What decides when it stops, so it never stops (or keeps running) unexpectedly
+  const rule = !running || p.terminals === null ? null : p.keptUp ? "Kept up: it runs until you stop it, with or without terminals." : p.canKeepUp ? "It stops when its last terminal ends." : "It stops a minute after its last terminal ends.";
 
   return (
     <Section
       title="Terminals"
       aside={
-        running && (
-          <Button size="sm" variant="outline" disabled={stop.isPending} onClick={() => (terminals.length || p.terminals === null ? setConfirming(true) : stopNow())}>
-            Stop container
-          </Button>
-        )
+        <div className="flex gap-2">
+          {p.canKeepUp && p.terminals !== null && !p.keptUp && (
+            <Button size="sm" variant="outline" disabled={up.isPending} onClick={() => up.mutate(p.name, { onSuccess: notify.done, onError: notify.failed })}>
+              {running ? "Keep running" : "Start without a terminal"}
+            </Button>
+          )}
+          {running && (
+            <Button size="sm" variant="outline" disabled={stop.isPending} onClick={() => (terminals.length || p.terminals === null ? setConfirming(true) : stopNow())}>
+              Stop container
+            </Button>
+          )}
+        </div>
       }
     >
+      {rule && <p className="mb-3 text-sm text-pretty text-muted-foreground">{rule}</p>}
       {p.terminals === null ? (
         <p className="text-sm text-pretty text-muted-foreground">This container is from before terminals, so its shells end with their window. Recreate it to get them.</p>
       ) : terminals.length === 0 ? (

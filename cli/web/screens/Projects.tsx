@@ -71,6 +71,7 @@ function ProjectTable({ projects }: { projects: ProjectView[] }) {
             <td className="py-2.5 pr-4">
               <div className="flex flex-wrap gap-x-3">
                 <StateLabel state={p.state} />
+                {p.keptUp && <span className="whitespace-nowrap text-muted-foreground">kept up</span>}
                 {p.terminalCount > 0 && (
                   <span className="whitespace-nowrap text-muted-foreground tabular-nums">
                     {p.terminalCount} terminal{p.terminalCount === 1 ? "" : "s"}

@@ -15,6 +15,8 @@ export type FakeContainer = {
   networks?: string[];
   /** Open terminals, as tmux list-sessions prints them (name|attached|activity|command|host|title) */
   terminals?: string[];
+  /** Marked by orca up (the mark is emptied on every start) */
+  up?: boolean;
 };
 
 export type FakeNetwork = { name: string; subnet: string; labels: Record<string, string> };
@@ -26,8 +28,9 @@ export type FakeState = {
   /** id of orca:latest, or null if the image isn't there */
   latest: string | null;
   created: Record<string, string>;
-  /** Images made before terminals (no orca.terminals label) */
+  /** Images made before terminals (no orca.terminals label), or before orca up (no orca.up) */
   noTerminals?: string[];
+  noUp?: string[];
   /** what `docker pull` makes orca:latest's remote tag point at */
   pulled?: string;
   failPull?: boolean;
@@ -40,7 +43,8 @@ export function fakeDocker(state: FakeState) {
   const ok = (stdout = ""): Result => ({ code: 0, stdout, stderr: "" });
   const fail = (stderr: string): Result => ({ code: 1, stdout: "", stderr });
   const find = (n: string) => state.containers.find((c) => c.name === n);
-  const imageLabels = (id: string): Record<string, string> => (state.noTerminals?.includes(id) ? {} : { "orca.terminals": "1" });
+  const imageLabels = (id: string): Record<string, string> =>
+    state.noTerminals?.includes(id) ? {} : state.noUp?.includes(id) ? { "orca.terminals": "1" } : { "orca.terminals": "1", "orca.up": "1" };
 
   function network([sub, ...a]: string[]): Result {
     const net = (n: string) => state.networks.find((x) => x.name === n);
@@ -112,17 +116,25 @@ export function fakeDocker(state: FakeState) {
       }
       if (cmd === "start") {
         const c = find(rest[rest.length - 1]);
-        if (c) c.running = true;
+        if (c) (c.running = true), (c.up = false);
         return c ? ok() : fail("No such container");
       }
       if (cmd === "stop") {
         const c = find(rest[rest.length - 1]);
-        if (c) c.running = false;
+        if (c) (c.running = false), (c.up = false);
         return c ? ok() : fail("No such container");
       }
-      if (cmd === "exec" && rest.includes("list-sessions")) {
+      // The mark and the terminals together, as orca asks for them (terminals.ts)
+      if (cmd === "exec" && rest.some((a) => a.includes("list-sessions"))) {
         const c = find(rest[0]);
-        return c?.terminals?.length ? ok(c.terminals.join("\n") + "\n") : fail("no server running on /tmp/tmux-1000/default");
+        const lines = [...(c?.up ? ["up"] : []), ...(c?.terminals ?? [])];
+        return { code: c?.terminals?.length ? 0 : 1, stdout: lines.map((l) => l + "\n").join(""), stderr: c?.terminals?.length ? "" : "no server running" };
+      }
+      if (cmd === "exec" && rest.includes("touch")) {
+        const c = find(rest[0]);
+        if (!c?.running || c.labels?.["orca.up"] !== "1") return fail("touch: cannot touch '/run/orca/up': No such file or directory");
+        c.up = true;
+        return ok();
       }
       if (cmd === "exec") return ok();
       if (cmd === "tag") {

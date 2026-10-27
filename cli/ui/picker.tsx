@@ -5,8 +5,18 @@ import type { Project } from "../projects";
 
 export type Choice = { action: "start" | "delete"; project: string } | { action: "new" } | { action: "quit" };
 
-/** The project list `orca` opens on: pick one to start, or make, delete, quit. */
-export function Picker({ projects, home, onChoose }: { projects: Project[]; home: string; onChoose: (c: Choice) => void }) {
+/** The project list `orca` opens on: pick one to start, or make, delete, quit. `kept`: what keeps each running one up. */
+export function Picker({
+  projects,
+  home,
+  kept = {},
+  onChoose,
+}: {
+  projects: Project[];
+  home: string;
+  kept?: Record<string, string>;
+  onChoose: (c: Choice) => void;
+}) {
   const { exit } = useApp();
   const [selected, setSelected] = useState(0);
   const choose = (c: Choice) => {
@@ -26,7 +36,8 @@ export function Picker({ projects, home, onChoose }: { projects: Project[]; home
 
   const tilde = (p: string) => (p === home || p.startsWith(home + "/") ? "~" + p.slice(home.length) : p);
   const nameWidth = Math.max(0, ...projects.map((p) => p.name.length));
-  const stateWidth = Math.max(0, ...projects.map((p) => stateOf(p).length)) + 2;
+  const label = (p: Project) => `${symbol[stateOf(p)]} ${stateOf(p)}${kept[p.name] ? `, ${kept[p.name]}` : ""}`;
+  const stateWidth = Math.max(0, ...projects.map((p) => label(p).length));
 
   return (
     <Box flexDirection="column">
@@ -41,7 +52,7 @@ export function Picker({ projects, home, onChoose }: { projects: Project[]; home
               <Text bold={on}>{on ? "› " : "  "}{p.name.padEnd(nameWidth)}</Text>
               {"  "}
               <Text color={tone[s] === "dim" ? undefined : tone[s]} dimColor={tone[s] === "dim"}>
-                {`${symbol[s]} ${s}`.padEnd(stateWidth)}
+                {label(p).padEnd(stateWidth)}
               </Text>
               {"  "}
               <Text dimColor>{p.folder ? tilde(p.folder) : ""}</Text>

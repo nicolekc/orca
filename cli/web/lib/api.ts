@@ -47,6 +47,7 @@ export const actions = {
   create: (name: string) => request<ActionResult>("POST", "/api/projects", { name }),
   open: (v: { project: string; session?: string; terminal?: string }) =>
     request<ActionResult>("POST", `${p(v.project)}/open`, { session: v.session, terminal: v.terminal }),
+  up: (project: string) => request<ActionResult>("POST", `${p(project)}/up`),
   stop: (project: string) => request<ActionResult>("POST", `${p(project)}/stop`),
   recreate: (project: string) => request<ActionResult>("POST", `${p(project)}/recreate`),
   addForward: (v: { project: string; port: string }) => request<ActionResult>("POST", `${p(v.project)}/forwards`, { port: v.port }),

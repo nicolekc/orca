@@ -52,7 +52,7 @@ export function world(specs: Spec[], state: Partial<FakeState> = {}, config: Rec
       // Newest first, in the order given
       startedAt: new Date(1000 * (NOW - i)).toISOString(),
       image: s.outdated ? "sha256:old" : "sha256:new",
-      labels: s.old ? {} : { "orca.terminals": "1" },
+      labels: s.old ? {} : { "orca.terminals": "1", "orca.up": "1" },
       home,
       terminals: (s.terminals ?? []).map(([name, command, title, attached]) => `${name}|${attached ? 1 : 0}|${NOW - 60}|${command}|host|${title ?? "host"}`),
     });

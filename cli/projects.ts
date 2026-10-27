@@ -88,8 +88,8 @@ export async function listContainers(ctx: Context): Promise<Container[]> {
   return (JSON.parse(await docker(ctx, ["inspect", ...list])) as Parameters<typeof parseContainer>[0][]).map(parseContainer);
 }
 
-/** `terminals`: made from a Dockerfile with orca's terminals (its orca.terminals label) */
-export type Image = { id: string; created: string; terminals: boolean };
+/** `terminals`, `up`: made from a Dockerfile with orca's terminals, and with orca up (its labels) */
+export type Image = { id: string; created: string; terminals: boolean; up: boolean };
 
 export async function latestImage(ctx: Context): Promise<Image | null> {
   return inspectImage(ctx, "orca:latest");
@@ -99,7 +99,8 @@ export async function inspectImage(ctx: Context, ref: string): Promise<Image | n
   const r = await ctx.docker.run(["image", "inspect", ref]);
   if (r.code !== 0) return null;
   const [img] = JSON.parse(r.stdout) as { Id: string; Created: string; Config?: { Labels?: Record<string, string> | null } }[];
-  return { id: img.Id, created: img.Created, terminals: img.Config?.Labels?.["orca.terminals"] === "1" };
+  const labels = img.Config?.Labels ?? {};
+  return { id: img.Id, created: img.Created, terminals: labels["orca.terminals"] === "1", up: labels["orca.up"] === "1" };
 }
 
 /** Runs a docker command that must succeed, turning the common failures into fixes. */

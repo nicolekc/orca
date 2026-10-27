@@ -20,15 +20,24 @@ export type Terminal = {
 /** Containers made from images before terminals open plain shells instead. */
 export const hasTerminals = (c: Container) => c.labels["orca.terminals"] === "1";
 
+/** Containers whose image can be kept up (`orca up`); older ones stop a minute after their last terminal. */
+export const canKeepUp = (c: Container) => c.labels["orca.up"] === "1";
+
+/** What keeps a running container up: its open terminals, and whether `orca up` marked it. */
+export type Activity = { terminals: Terminal[]; up: boolean };
+
+/** The mark `orca up` leaves, in a folder emptied on every start (container-features.md) */
+const UP = "/run/orca/up";
+
 const FORMAT = "#{session_name}|#{session_attached}|#{session_activity}|#{pane_current_command}|#{host}|#{pane_title}";
 
-/** The terminals open in a running container (none when tmux has no server yet). */
-export async function listTerminals(ctx: Context, container: string): Promise<Terminal[]> {
-  const r = await ctx.docker.run(["exec", container, "tmux", "list-sessions", "-F", FORMAT]);
-  if (r.code !== 0) return [];
-  return r.stdout
-    .split("\n")
-    .filter(Boolean)
+/** A running container's activity (no terminals when tmux has no server yet). */
+export async function activity(ctx: Context, container: string): Promise<Activity> {
+  // Both in one docker exec, as the dashboard asks every few seconds
+  const r = await ctx.docker.run(["exec", container, "sh", "-c", `test -e ${UP} && echo up; tmux list-sessions -F '${FORMAT}'`]);
+  const lines = r.stdout.split("\n").filter(Boolean);
+  const terminals = lines
+    .filter((line) => line !== "up")
     .map((line) => {
       const [name, attached, active, command, host, ...title] = line.split("|");
       const t = title.join("|");
@@ -36,12 +45,21 @@ export async function listTerminals(ctx: Context, container: string): Promise<Te
       return { name, attached: Number(attached) || 0, active: Number(active) * 1000 || 0, command, title: t && t !== host ? t : null };
     })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return { terminals, up: lines.includes("up") };
 }
 
-/** Each running project's open terminals, by project name. */
-export async function openTerminals(ctx: Context, projects: { name: string; container: Container | null }[]): Promise<Map<string, Terminal[]>> {
+/** The terminals open in a running container. */
+export const listTerminals = async (ctx: Context, container: string) => (await activity(ctx, container)).terminals;
+
+/** Marks a running container to keep running until it's stopped; false if it has nowhere to. */
+export async function keepUp(ctx: Context, container: string): Promise<boolean> {
+  return (await ctx.docker.run(["exec", container, "touch", UP])).code === 0;
+}
+
+/** Each running project's activity, by project name. */
+export async function activities(ctx: Context, projects: { name: string; container: Container | null }[]): Promise<Map<string, Activity>> {
   const running = projects.filter((p) => p.container?.running && hasTerminals(p.container));
-  return new Map(await Promise.all(running.map(async (p) => [p.name, await listTerminals(ctx, p.container!.name)] as const)));
+  return new Map(await Promise.all(running.map(async (p) => [p.name, await activity(ctx, p.container!.name)] as const)));
 }
 
 /** The next terminal name: the lowest number not in use. */

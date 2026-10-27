@@ -10,7 +10,7 @@ import { quietConsole } from "./quiet";
 
 /** The views `show` draws: what each is given, and what choosing in it returns. */
 type Views = {
-  picker: { props: { projects: Project[]; home: string }; result: Choice };
+  picker: { props: { projects: Project[]; home: string; kept?: Record<string, string> }; result: Choice };
   choose: { props: { question: string; options: Option[] }; result: string | null };
 };
 type Request = { view: keyof Views; props: unknown; log: string; result?: unknown };

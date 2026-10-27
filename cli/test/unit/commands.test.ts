@@ -256,3 +256,12 @@ test("list shows how many terminals each running project has", async () => {
   await list(t.ctx, { json: true });
   expect(t.output()).toContain('"command": "claude"');
 });
+
+test("list shows which running projects are kept up", async () => {
+  const t = running();
+  t.state.containers[0].up = true;
+  await list(t.ctx, {});
+  expect(t.output()).toContain("running, kept up, 2 terminals");
+  await list(t.ctx, { json: true });
+  expect(t.output()).toContain('"keptUp": true');
+});

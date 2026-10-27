@@ -17,6 +17,8 @@ step() { echo "-- $*"; }
 in_tty() { echo exit | script -qec "$ORCA $*" /dev/null; }
 mount_of() { docker inspect -f "{{range .Mounts}}{{if eq .Destination \"$2\"}}{{.Source}}{{end}}{{end}}" "$1"; }
 running() { docker inspect -f '{{.State.Running}}' "$1"; }
+# Waits up to 15 seconds for a container to stop by itself
+stops() { for _ in $(seq 30); do [ "$(running "$1")" = false ] && return 0; sleep 0.5; done; return 1; }
 
 # Everything orca made: project containers, their networks, the forwards proxy
 clean() {
@@ -71,33 +73,46 @@ projects() {
 }
 
 terminals() {
-  step "the container keeps running after its last window closes"
-  in_tty start "$T/dev/demo"
-  sleep 8
+  step "the container stops a few seconds after its last terminal ends, and says so"
+  in_tty start "$T/dev/demo" | tee out.txt
+  grep -q "That was demo's last terminal, so it stops now" out.txt || fail "exiting the last terminal should say it stops"
+  stops orca-demo || fail "the container should stop after its last terminal ends"
+
+  step "up keeps it running without terminals"
+  "$ORCA" up "$T/dev/demo" | tee out.txt
+  grep -q "demo is up" out.txt || fail "up should say it's up"
+  sleep 20   # past the wait for a first terminal
   if [ "$(running orca-demo)" != true ]; then
     docker inspect -f '{{json .State}}' orca-demo; docker logs orca-demo 2>&1 | tail -20
-    fail "the container should keep running for a minute after its last window closes"
+    fail "a container started with up should keep running without terminals"
   fi
 
-  step "start again opens a terminal in it"
+  step "start opens a terminal in it, and leaving that keeps it running"
   in_tty start "$T/dev/demo" | tee out.txt
   grep -q "Opening demo terminal 1" out.txt || fail "should open a terminal"
+  grep -q "stops now" out.txt && fail "a kept-up container shouldn't stop when its terminals end"
+  sleep 4
+  [ "$(running orca-demo)" = true ] || fail "a kept-up container should keep running after its terminals end"
 
   step "a terminal keeps running without a window, and list shows it"
   docker exec orca-demo tmux new-session -d -s 1 sleep 600
   "$ORCA" list | tee out.txt
-  grep -Eq "demo +● running, 1 terminal" out.txt || fail "list should show demo's terminal"
+  grep -Eq "demo +● running, kept up, 1 terminal" out.txt || fail "list should show demo kept up, with its terminal"
   [ "$("$ORCA" list --json | jq '.[] | select(.name == "demo") | .terminals | length')" = "$(docker exec orca-demo tmux list-sessions | wc -l)" ] || fail "list --json's terminals should be tmux's"
 
   step "stop says which terminals it ends, then stops"
   "$ORCA" stop demo --yes | tee out.txt
   grep -q "1  sleep" out.txt || fail "stop should list the terminal"
   [ "$(running orca-demo)" = false ] || fail "demo should be stopped"
+
+  step "stopping ends being kept up: the next start stops with its terminal"
+  in_tty start "$T/dev/demo"
+  stops orca-demo || fail "after a stop, the container should no longer be kept up"
 }
 
 update() {
   step "an out-of-date container says so"
-  in_tty start "$T/dev/demo"
+  "$ORCA" up "$T/dev/demo"
   real=$(docker image inspect -f '{{.Id}}' orca:latest)
   docker build -q -t orca:latest - <<<"FROM orca:latest
 LABEL orca.e2e=newer" >/dev/null
@@ -107,8 +122,10 @@ LABEL orca.e2e=newer" >/dev/null
 }
 
 forwards() {
-  in_tty start "$T/dev/demo"
+  "$ORCA" up "$T/dev/demo"
   in_tty new web
+  stops orca-web || fail "web should stop with its terminal"
+  "$ORCA" up "$ORCA_DIR/projects/web/workspace"
 
   step "a forward reaches a server in the project's container"
   docker exec -d orca-demo python3 -m http.server 3000
@@ -134,7 +151,7 @@ forwards() {
 }
 
 dashboard() {
-  in_tty start "$T/dev/demo"
+  "$ORCA" up "$T/dev/demo"
   echo '{"terminal": ["true", "{command}"]}' > "$ORCA_DIR/config.json"
   "$ORCA" serve --no-open > serve.log 2>&1 &
   serve_pid=$!
