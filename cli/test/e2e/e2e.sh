@@ -86,7 +86,7 @@ terminals() {
   step "a terminal that ends with no window on it stops the container by itself"
   docker start orca-demo >/dev/null
   docker exec orca-demo tmux new-session -d -s 1 sleep 3
-  stops orca-demo || fail "the container should stop a few seconds after its last terminal ends"
+  stops orca-demo || fail "the container should stop about ten seconds after its last terminal ends"
 
   step "up keeps it running without terminals"
   "$ORCA" up "$T/dev/demo" | tee out.txt
