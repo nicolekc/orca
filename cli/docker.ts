@@ -43,7 +43,12 @@ export const realDocker: Docker = {
   },
   async attach(args) {
     const proc = Bun.spawn(["docker", ...args], { stdio: ["inherit", "inherit", "inherit"] });
-    return proc.exited;
+    const code = await proc.exited;
+    // A tmux killed with its container can't undo what it turned on, so the Mac's terminal kept
+    // reporting the mouse into the shell as text: turn off mouse reporting and focus events,
+    // and show the cursor (all harmless when tmux already did)
+    if (process.stdout.isTTY) process.stdout.write("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?1004l\x1b[?25h");
+    return code;
   },
 };
 
