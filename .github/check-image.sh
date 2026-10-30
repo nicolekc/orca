@@ -15,6 +15,16 @@ gh --version | head -1
 # Terminals: tmux with orca's settings, and the main process that waits for them
 tmux -V
 ORCA_PROJECT=check tmux new-session -d -s 1 && test "$(tmux show -gv @project)" = check && tmux kill-server
+# A terminal is an ordinary shell, not a login one, so it keeps the image's PATH (in this empty
+# home, the image's claude) and has tab completion
+tmux new-session -d -s 1
+tmux send-keys -t 1 '{ shopt -q login_shell && echo login || echo plain; type -P claude; complete -p ls; } > /tmp/shell.txt 2>&1; touch /tmp/shell.done' Enter
+for _ in $(seq 20); do test -e /tmp/shell.done && break; sleep 0.5; done
+tmux kill-server
+cat /tmp/shell.txt
+test "$(sed -n 1p /tmp/shell.txt)" = plain
+test "$(sed -n 2p /tmp/shell.txt)" = /opt/claude/.local/bin/claude
+grep -q '^complete -F .* ls$' /tmp/shell.txt
 command -v orca-keepalive
 gcc --version | head -1
 ffmpeg -version | head -1
