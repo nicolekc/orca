@@ -131,7 +131,7 @@ ENV LANG=C.UTF-8
 COPY image/tmux.conf /etc/tmux.conf
 # Tab completion for commands' arguments in every terminal. Debian turns it on only in login
 # shells (which terminals aren't) or from a stock ~/.bashrc (which a new home doesn't have);
-# the script skips itself if a ~/.bashrc has already loaded it
+# a stock ~/.bashrc then loads it again, which costs a few milliseconds and nothing else
 RUN echo '. /etc/profile.d/bash_completion.sh' >> /etc/bash.bashrc
 COPY --chmod=755 image/keepalive.sh /usr/local/bin/orca-keepalive
 # Tells orca this image has terminals (containers made from older images open plain shells),
