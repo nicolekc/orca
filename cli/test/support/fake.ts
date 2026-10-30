@@ -39,6 +39,8 @@ export type FakeState = {
   /** what `docker pull` makes orca:latest's remote tag point at */
   pulled?: string;
   failPull?: boolean;
+  /** Mac ports something else is listening on, so publishing them fails */
+  taken?: number[];
   /** What Docker has in all (docker info); 16 GB and 10 CPUs unless set */
   total?: { memory: number; cpus: number };
 };
@@ -116,6 +118,8 @@ export function fakeDocker(state: FakeState) {
       if (cmd === "network") return network(rest);
       if (cmd === "run" && rest[0] === "-d") {
         const flag = (f: string) => rest.flatMap((a, i) => (a === f ? [rest[i + 1]] : []));
+        const taken = flag("-p").map((p) => Number(p.split(":")[1])).find((p) => state.taken?.includes(p));
+        if (taken) return fail(`Bind for 127.0.0.1:${taken} failed: port is already allocated`);
         // Like Docker, the container gets the image's labels too
         const labels = { ...imageLabels(state.latest!), ...Object.fromEntries(flag("--label").map((l) => l.split("=") as [string, string])) };
         const limit = (f: string) => rest.find((a) => a.startsWith(`${f}=`))?.slice(f.length + 1);
@@ -161,6 +165,8 @@ export function fakeDocker(state: FakeState) {
         c.up = true;
         return ok();
       }
+      // The proxy's certificate authority, as Caddy makes it
+      if (cmd === "exec" && rest.some((a) => a.endsWith("root.crt"))) return ok("-----BEGIN CERTIFICATE-----\nfake\n-----END CERTIFICATE-----\n");
       if (cmd === "exec") return ok();
       if (cmd === "tag") {
         if (state.pulled) state.latest = state.pulled;
@@ -194,7 +200,8 @@ function inspected(c: FakeContainer) {
 
 /** A context over a fresh temp folder standing in for the Mac's home. */
 /** `answers` answer `ask` and `choose` in turn; for `choose`, an option's value, or null to quit. */
-export function fakeContext(state: Partial<FakeState> = {}, answers: (string | null)[] = [], host: Record<string, string> = {}) {
+/** `names` are what hostnames look up to on the Mac (as /etc/hosts would say). */
+export function fakeContext(state: Partial<FakeState> = {}, answers: (string | null)[] = [], host: Record<string, string> = {}, names: Record<string, string[]> = {}) {
   const home = mkdtempSync(join(tmpdir(), "orca-test-"));
   const full: FakeState = { containers: [], volumes: [], networks: [], latest: "sha256:new", created: {}, ...state };
   const { docker, calls, attached } = fakeDocker(full);
@@ -219,6 +226,7 @@ export function fakeContext(state: Partial<FakeState> = {}, answers: (string | n
       const key = argv.join(" ");
       return key in host ? { code: 0, stdout: host[key] + "\n", stderr: "" } : { code: 1, stdout: "", stderr: "" };
     },
+    lookup: async (hostname) => names[hostname] ?? [],
   };
   return { ctx, home, state: full, calls, attached, lines, launched, output: () => lines.join("\n") };
 }

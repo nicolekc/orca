@@ -14,7 +14,8 @@ export type Spec = {
   old?: boolean;
   /** Made from an older image than the newest */
   outdated?: boolean;
-  forwards?: number[];
+  /** Its forwards file's lines: a port (3000), or a port and a URL it's served at too ("3000 https://dev.myapp.com") */
+  forwards?: (number | string)[];
   sessions?: { id: string; title: string; updated: number }[];
   /** A container from before project homes, not migrated yet */
   notMigrated?: boolean;

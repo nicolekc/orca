@@ -116,6 +116,24 @@ test("forwards: add one, see its address, remove it; a bad port says why", async
   expect(await screen.findByText(/99999/)).toBeTruthy();
 });
 
+test("forwards: a URL too, what it still needs to open, and removing just it", async () => {
+  const { screen } = await open("/p/app", [{ name: "app", container: "running" }]);
+  const forwards = await section(screen, "Forwards");
+  type(within(forwards).getByLabelText("Port to forward"), "3000");
+  type(within(forwards).getByLabelText("Also serve it at this URL (optional)"), "https://dev.myapp.com/auth/callback");
+  fireEvent.click(within(forwards).getByRole("button", { name: "Forward" }));
+  expect(await within(forwards).findByRole("link", { name: "https://dev.myapp.com" })).toBeTruthy();
+  expect(within(forwards).getByRole("link", { name: "http://3000.app.localhost:7320" })).toBeTruthy();
+  // The fake Mac doesn't send dev.myapp.com to itself, and doesn't trust orca's authority yet
+  expect(within(forwards).getByText("127.0.0.1 dev.myapp.com")).toBeTruthy();
+  expect(within(forwards).getByText(/certificate authority/)).toBeTruthy();
+
+  fireEvent.click(within(forwards).getByRole("button", { name: "Stop serving port 3000 at https://dev.myapp.com" }));
+  await gone(() => within(forwards).queryByRole("link", { name: "https://dev.myapp.com" }));
+  expect(within(forwards).getByRole("link", { name: "http://3000.app.localhost:7320" })).toBeTruthy();
+  expect(within(forwards).queryByText(/certificate authority/)).toBeNull();
+});
+
 test("an image update: what's kept and reset, and Recreate waits until it's stopped", async () => {
   const { screen, launched } = await open("/p/app", [{ name: "app", container: "running", outdated: true }]);
   expect(await screen.findByText("Image update available")).toBeTruthy();

@@ -17,7 +17,7 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
       container: p.container?.name ?? null,
       terminals: live.get(p.name)?.terminals ?? [],
       keptUp: live.get(p.name)?.up ?? false,
-      forwards: forwards.filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
+      forwards: forwards.filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name), urls: f.urls })),
     }));
     ctx.print(JSON.stringify(rows, null, 2));
     return;
@@ -42,7 +42,8 @@ export async function list(ctx: Context, opts: { json?: boolean }): Promise<void
   if (forwards.length) {
     const proxy = await proxyState(ctx);
     ctx.print();
-    ctx.print(`Forwards (proxy on 127.0.0.1:${proxy.port}, ${proxy.running ? "running" : "stopped: starts with orca start or orca forward"}):`);
-    for (const f of forwards) ctx.print(`  ${urlFor(ctx, f.port, f.project)} → ${f.project}:${f.port}`);
+    const ports = [proxy.port, ...proxy.ports].join(", :");
+    ctx.print(`Forwards (proxy on 127.0.0.1:${ports}, ${proxy.running ? "running" : "stopped: starts with orca start or orca forward"}):`);
+    for (const f of forwards) for (const url of [urlFor(ctx, f.port, f.project), ...f.urls]) ctx.print(`  ${url} → ${f.project}:${f.port}`);
   }
 }

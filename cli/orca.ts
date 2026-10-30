@@ -58,7 +58,9 @@ Usage:
       --yes                 don't ask to confirm
   orca forward [port]       make a port in this project's container reachable from the Mac,
                             at http://<port>.<project>.localhost:7320 (no port: list them)
-      --remove <port>       stop forwarding a port
+      --url <url>           serve it at this URL too, e.g. https://dev.myapp.com (an
+                            OAuth callback's); its hostname must point at this Mac
+      --remove <port|url>   stop forwarding a port, or serving it at one URL
       --project <name>      a project other than the one for this folder
   orca update               get the newest image, and the newest orca
 
@@ -83,6 +85,7 @@ async function main(all: string[]): Promise<number> {
       home: { type: "boolean" },
       yes: { type: "boolean" },
       remove: { type: "string" },
+      url: { type: "string" },
       project: { type: "string" },
       memory: { type: "string" },
       cpus: { type: "string" },
@@ -143,7 +146,9 @@ async function main(all: string[]): Promise<number> {
         return s === undefined ? undefined : Number(s);
       };
       if (args.length > 1) throw new OrcaError("orca forward takes one port.", "orca forward <port>");
-      return forward(ctx, { project, add: port(args[0]), remove: port(values.remove) }).then(() => 0);
+      // --remove takes a port, or one of a port's URLs
+      const remove = values.remove !== undefined && /^[a-z]+:/i.test(values.remove) ? values.remove : port(values.remove);
+      return forward(ctx, { project, add: port(args[0]), url: values.url, remove }).then(() => 0);
     }
     case "serve":
       return serve(ctx, { open: !values["no-open"] });

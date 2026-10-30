@@ -6,6 +6,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
+import { NotPointing, TrustNote } from "../components/forwards";
 import { actions, useAction, useBoxSettings, useProject, type ProjectDetail } from "../lib/api";
 import { ago } from "../lib/utils";
 
@@ -187,47 +188,68 @@ function Forwards({ p }: { p: ProjectDetail }) {
   const add = useAction(actions.addForward);
   const remove = useAction(actions.removeForward);
   const [port, setPort] = useState("");
+  const [url, setUrl] = useState("");
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!port) return;
-    add.mutate({ project: p.name, port }, { onSuccess: (r) => (notify.done(r), setPort("")), onError: notify.failed });
+    add.mutate({ project: p.name, port, url: url || undefined }, { onSuccess: (r) => (notify.done(r), setPort(""), setUrl("")), onError: notify.failed });
   };
+  // A forward's usual address first, then any URLs it was given; removing the usual one removes the forward
+  const rows = p.forwards.flatMap((f) => [
+    { key: f.url, url: f.url, port: f.port, pointsHere: true, remove: f.port, label: `Stop forwarding port ${f.port}` },
+    ...f.urls.map((u) => ({ key: u.url, url: u.url, port: f.port, pointsHere: u.pointsHere, remove: u.url, label: `Stop serving port ${f.port} at ${u.url}` })),
+  ]);
 
   return (
     <Section title="Forwards" aside={<span className="text-xs text-muted-foreground">Servers must listen on 0.0.0.0</span>}>
-      {p.forwards.length > 0 && (
+      {rows.length > 0 && (
         <ul className="mb-3 divide-y rounded-md border text-sm">
-          {p.forwards.map((f) => (
-            <li key={f.port} className="flex items-center justify-between gap-4 px-3 py-2">
-              <a href={f.url} target="_blank" rel="noreferrer" className="truncate font-mono text-xs hover:underline">
-                {f.url}
-              </a>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-muted-foreground tabular-nums">→ {f.port}</span>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={`Stop forwarding port ${f.port}`}
-                  disabled={remove.isPending}
-                  onClick={() => remove.mutate({ project: p.name, port: f.port }, { onSuccess: notify.done, onError: notify.failed })}
-                >
-                  <XIcon />
-                </Button>
+          {rows.map((r) => (
+            <li key={r.key} className="px-3 py-2">
+              <div className="flex items-center justify-between gap-4">
+                <a href={r.url} target="_blank" rel="noreferrer" className="truncate font-mono text-xs hover:underline">
+                  {r.url}
+                </a>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">→ {r.port}</span>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={r.label}
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate({ project: p.name, port: r.remove }, { onSuccess: notify.done, onError: notify.failed })}
+                  >
+                    <XIcon />
+                  </Button>
+                </div>
               </div>
+              {!r.pointsHere && <NotPointing url={r.url} />}
             </li>
           ))}
         </ul>
       )}
-      <form onSubmit={submit} className="flex items-center gap-2">
+      <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
         <label htmlFor="forward-port" className="sr-only">
           Port to forward
         </label>
-        <Input id="forward-port" inputMode="numeric" placeholder="Port, e.g. 3000" value={port} onChange={(e) => setPort(e.target.value)} className="w-44 tabular-nums" />
+        <Input id="forward-port" inputMode="numeric" placeholder="Port, e.g. 3000" value={port} onChange={(e) => setPort(e.target.value)} className="w-36 tabular-nums" />
+        <label htmlFor="forward-url" className="sr-only">
+          Also serve it at this URL (optional)
+        </label>
+        <Input
+          id="forward-url"
+          type="url"
+          placeholder="Also at a URL (optional)"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="min-w-0 flex-1 basis-64"
+        />
         <Button type="submit" size="sm" variant="outline" disabled={!port || add.isPending}>
           Forward
         </Button>
       </form>
+      <TrustNote urls={rows.map((r) => r.url)} />
     </Section>
   );
 }
@@ -350,7 +372,7 @@ function Danger({ p }: { p: ProjectDetail }) {
 
   return (
     <Section title="Delete">
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <Button size="sm" variant="outline" className="text-destructive" disabled={running} onClick={() => (setConfirm(""), setHome(false), setOpen(true))}>
           Delete…
         </Button>

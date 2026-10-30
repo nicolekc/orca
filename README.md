@@ -142,7 +142,7 @@ orca update        # get the image (and later, newer orca and images)
 orca               # pick a project and start it
 ```
 
-`orca serve` (a dashboard of every project, forward and Claude session), `orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
+`orca serve` (a dashboard of every project, forward and Claude session), `orca start [folder]`, `orca new <name>`, `orca list`, `orca delete <project>`, `orca forward <port>` (reach a server in the container at `http://<port>.<project>.localhost:7320`; add `--url https://dev.myapp.com` to serve it at a URL of your own too, such as one an OAuth provider has on file, once its hostname points at this machine), `orca update`: see `orca --help`. Working on it: `make help` (source in `cli/`).
 
 Each `orca start` opens a terminal in the project's container: a tmux session that keeps running when its window closes, so a project can have any number of chats going at once. Claude Code and Codex come with the image; each logs in once per project (`claude`, then `codex login --device-auth`, since the container has no browser; it needs device code sign-in turned on in ChatGPT's security settings). Everything orca adds to a container, at creation and every time it runs, is listed in [container-features.md](container-features.md).
 

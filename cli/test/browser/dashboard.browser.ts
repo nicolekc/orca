@@ -115,10 +115,15 @@ test("the header's forwards status leads to every forward, each with its project
   await expect(p.getByRole("heading", { level: 1, name: "Forwards" })).toBeVisible();
   await expect(p.getByRole("main")).toContainText("isn't running");
   const rows = p.getByRole("main").getByRole("row");
-  await expect(rows).toHaveCount(4);
+  await expect(rows).toHaveCount(5);
   await expect(rows.nth(1).getByRole("link", { name: "3000.app.localhost:7320" })).toHaveAttribute("href", "http://3000.app.localhost:7320");
-  await expect(rows.nth(3)).toContainText("llm-chat-framework-sandbox");
-  await expect(rows.nth(3)).toContainText("stopped");
+  // A URL keeps its https://, and says what it still needs
+  await expect(rows.nth(2).getByRole("link", { name: "https://dev.myapp.com" })).toBeVisible();
+  await expect(rows.nth(2)).toContainText("127.0.0.1 dev.myapp.com");
+  await expect(p.getByRole("main")).toContainText("certificate authority");
+  await shot(p, "forwards");
+  await expect(rows.nth(4)).toContainText("llm-chat-framework-sandbox");
+  await expect(rows.nth(4)).toContainText("stopped");
   expect(errors).toEqual([]);
   await close();
 }, 30_000);

@@ -10,7 +10,8 @@ export const PROJECTS = world(
       name: "app",
       container: "running",
       terminals: [["1", "claude", "✳ Fix the login redirect loop when the session cookie expires mid-request", true], ["2", "bash"], ["3", "node"]],
-      forwards: [3000, 5173],
+      // One with a URL too, as for an OAuth callback; dev.myapp.com doesn't point at the fake Mac
+      forwards: [3000, "3000 https://dev.myapp.com", 5173],
       sessions: [
         { id: "11111111-2222-3333-4444-555555555555", title: "Fix the login redirect loop when the session cookie expires mid-request", updated: ago(5) },
         { id: "21111111-2222-3333-4444-555555555555", title: "Add search", updated: ago(60 * 26) },

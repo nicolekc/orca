@@ -33,7 +33,7 @@ test("projects list each project's state, folder, forwards and update flag", asy
   const { status, body } = await t.call("GET", "/api/projects");
   expect(status).toBe(200);
   expect(body).toEqual([
-    expect.objectContaining({ name: "app", folder: "~/dev/app", state: "running", imageUpdate: true, forwards: [{ port: 3000, url: "http://3000.app.localhost:7320" }] }),
+    expect.objectContaining({ name: "app", folder: "~/dev/app", state: "running", imageUpdate: true, forwards: [{ port: 3000, url: "http://3000.app.localhost:7320", urls: [] }] }),
   ]);
 });
 
@@ -173,6 +173,22 @@ test("forwards are added and removed", async () => {
   expect(readFileSync(join(t.record, "forwards"), "utf8").trim()).toBe("");
 });
 
+test("a forward can have URLs too: added with one, each removed on its own, and whether its hostname points here", async () => {
+  const t = setup();
+  expect((await t.call("POST", "/api/projects/app/forwards", { port: 3000, url: "https://dev.myapp.com/cb" })).status).toBe(200);
+  expect((await t.call("POST", "/api/projects/app/forwards", { port: 3000, url: "http://localhost:3000" })).status).toBe(200);
+  expect(readFileSync(join(t.record, "forwards"), "utf8")).toBe("3000\n3000 https://dev.myapp.com\n3000 http://localhost:3000\n");
+  const { body } = await t.call("GET", "/api/projects/app");
+  expect(body.forwards[0].urls).toEqual([
+    { url: "https://dev.myapp.com", pointsHere: false },
+    { url: "http://localhost:3000", pointsHere: true },
+  ]);
+  expect((await t.call("GET", "/api/info")).body.proxy.ports).toEqual([443, 3000]);
+  expect((await t.call("POST", "/api/projects/app/forwards", { port: 3000, url: "dev.myapp.com" })).status).toBe(400);
+  expect((await t.call("DELETE", `/api/projects/app/forwards/${encodeURIComponent("https://dev.myapp.com")}`, {})).status).toBe(200);
+  expect(readFileSync(join(t.record, "forwards"), "utf8")).toBe("3000\n3000 http://localhost:3000\n");
+});
+
 test("delete needs the project's name typed, and passes --home through", async () => {
   const t = setup();
   t.state.containers.push({ name: "orca-app", home: join(t.record, "home") });
@@ -187,5 +203,6 @@ test("delete needs the project's name typed, and passes --home through", async (
 test("info gives the version and the proxy's state", async () => {
   const t = setup();
   const { body } = await t.call("GET", "/api/info");
-  expect(body).toEqual({ version: "abc1234", proxy: { port: 7320, running: false } });
+  expect(body).toMatchObject({ version: "abc1234", proxy: { port: 7320, ports: [], running: false } });
+  expect(body.ca.file).toBe("~/.orca/proxy/orca-ca.crt");
 });
