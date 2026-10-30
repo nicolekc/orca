@@ -8,7 +8,7 @@ import { OrcaError, tilde, type Context } from "../context";
 import { stateOf, type State } from "../present";
 import { inspectImage, latestImage, loadProjects, type Project } from "../projects";
 import { dockerTotal, effective, memoryUsed, readBoxSettings, type BoxSettings, type Effective, type Resources } from "../box-settings";
-import { allForwards, proxyState, urlFor } from "../proxy";
+import { allForwards, caFile, parseAddress, pointsHere, proxyState, trustCommand, urlFor } from "../proxy";
 import { listSessions, type Session } from "../sessions";
 import { openInTerminal } from "../terminal";
 import { activities, activity, canKeepUp, hasTerminals, listTerminals, type Activity, type Terminal } from "../terminals";
@@ -20,7 +20,8 @@ export type ProjectView = {
   state: State;
   imageUpdate: boolean;
   managed: boolean;
-  forwards: { port: number; url: string }[];
+  /** Each forwarded port: its usual address, and any extra ones with whether the Mac sends their hostname to itself */
+  forwards: { port: number; url: string; urls: { url: string; pointsHere: boolean }[] }[];
   /** How many terminals are open in its container */
   terminalCount: number;
   /** Started with orca up: it runs until stopped, terminals or not */
@@ -38,6 +39,8 @@ export type ProjectDetail = ProjectView & {
 /** A project's box settings: what its container gets and where each comes from, its own, what it uses, and what Docker has in all */
 export type BoxSettingsView = Effective & { own: BoxSettings; used: string | null; total: Resources | null };
 export type ActionResult = { messages: string[] };
+/** Orca's certificate authority for HTTPS forwards, and the command that makes this Mac trust it (null where orca knows none) */
+export type CertificateAuthority = { file: string; trust: string | null };
 export type ApiError = { error: string; fix?: string };
 
 /** The dashboard's JSON API over the same core as the command line. Requests are already guarded. */
@@ -56,7 +59,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
   };
 
   async function route(method: string, [what, name, action, arg]: string[], req: Request): Promise<unknown> {
-    if (method === "GET" && what === "info") return { version: opts.version, proxy: await proxyState(ctx) };
+    if (method === "GET" && what === "info")
+      return { version: opts.version, proxy: await proxyState(ctx), ca: { file: tilde(ctx, caFile(ctx)), trust: trustCommand(ctx) } satisfies CertificateAuthority };
     if (method === "GET" && what === "sessions")
       return (await loadProjects(ctx)).flatMap((p) => listSessions(ctx, p.name)).sort((a, b) => b.updated - a.updated).slice(0, 200);
     if (what !== "projects") throw new NotFound("No such API.");
@@ -65,7 +69,8 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       if (method === "GET") {
         const projects = await loadProjects(ctx);
         const live = await activities(ctx, projects);
-        return projects.map((p) => view(p, live.get(p.name)));
+        const points = await pointing();
+        return projects.map((p) => view(p, points, live.get(p.name)));
       }
       if (method === "POST") {
         const workspace = makeRecord(ctx, String((await json(req)).name ?? ""));
@@ -83,7 +88,7 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       const container = p.container ? ((await inspectImage(ctx, p.container.image))?.created ?? null) : null;
       const live = p.container?.running && hasTerminals(p.container) ? await activity(ctx, p.container.name) : undefined;
       const terminals = p.container && !hasTerminals(p.container) ? null : (live?.terminals ?? []);
-      return { ...view(p, live), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
+      return { ...view(p, await pointing(), live), sessions: listSessions(ctx, p.name), terminals, image: { container, newest: latest?.created ?? null } } satisfies ProjectDetail;
     }
     const b = method === "GET" ? {} : await json(req);
 
@@ -126,8 +131,12 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
       const r = await capture((c) => settings(c, p.name, { memory: text(b.memory), cpus: text(b.cpus) }));
       return { messages: r.messages.filter((m) => !m.startsWith("Docker has")) };
     }
-    if (action === "forwards" && method === "POST") return capture((c) => forward(c, { project: p.name, add: port(b.port) }));
-    if (action === "forwards" && method === "DELETE" && arg) return capture((c) => forward(c, { project: p.name, remove: port(arg) }));
+    if (action === "forwards" && method === "POST") {
+      const url = typeof b.url === "string" && b.url.trim() ? b.url.trim() : undefined;
+      return capture((c) => forward(c, { project: p.name, add: port(b.port), url }));
+    }
+    // A port, or one of its URLs
+    if (action === "forwards" && method === "DELETE" && arg) return capture((c) => forward(c, { project: p.name, remove: /^\d+$/.test(arg) ? port(arg) : arg }));
     if (method === "POST" && action === "delete") {
       if (b.confirm !== p.name) throw new OrcaError(`Type ${p.name} to confirm deleting it.`);
       return capture((c) => del(c, p.name, { home: b.home === true, yes: true }));
@@ -135,14 +144,22 @@ export function createApi(ctx: Context, opts: { orca: string; version: string })
     throw new NotFound("No such API.");
   }
 
-  function view(p: Project, live?: Activity): ProjectView {
+  /** Whether each extra address's hostname points at this Mac, looked up once for every project */
+  async function pointing(): Promise<Map<string, boolean>> {
+    const hosts = [...new Set(allForwards(ctx).flatMap((f) => f.urls.map((u) => parseAddress(u).host)))];
+    return new Map(await Promise.all(hosts.map(async (h) => [h, await pointsHere(ctx, h)] as const)));
+  }
+
+  function view(p: Project, points: Map<string, boolean>, live?: Activity): ProjectView {
     return {
       name: p.name,
       folder: p.folder ? tilde(ctx, p.folder) : null,
       state: stateOf(p),
       imageUpdate: p.outdated,
       managed: p.managed,
-      forwards: allForwards(ctx).filter((f) => f.project === p.name).map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name) })),
+      forwards: allForwards(ctx)
+        .filter((f) => f.project === p.name)
+        .map((f) => ({ port: f.port, url: urlFor(ctx, f.port, p.name), urls: f.urls.map((url) => ({ url, pointsHere: points.get(parseAddress(url).host) ?? true })) })),
       terminalCount: live?.terminals.length ?? 0,
       keptUp: live?.up ?? false,
       // A project without a container yet gets the newest image's

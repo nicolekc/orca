@@ -1,3 +1,4 @@
+import { lookup } from "node:dns/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { realDocker, type Docker, type Result } from "./docker";
@@ -23,6 +24,8 @@ export type Context = {
   launch: (argv: string[]) => Promise<void>;
   /** Runs a program on the Mac and captures its output (e.g. git config, for a new home) */
   host: (argv: string[]) => Promise<Result>;
+  /** A hostname's addresses, looked up on the Mac as a browser there would; none if it doesn't resolve */
+  lookup: (hostname: string) => Promise<string[]>;
 };
 
 export function realContext(): Context {
@@ -50,6 +53,11 @@ export function realContext(): Context {
       } catch {
         return { code: 127, stdout: "", stderr: `${argv[0]}: command not found` };
       }
+    },
+    lookup: async (hostname) => {
+      const timeout = new Promise<[]>((resolve) => setTimeout(() => resolve([]), 2000));
+      const found = lookup(hostname, { all: true }).then((all) => all.map((a) => a.address), () => []);
+      return Promise.race([found, timeout]);
     },
   };
 }

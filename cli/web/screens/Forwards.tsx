@@ -2,6 +2,7 @@ import { XIcon } from "lucide-react";
 import { LoadError, StateLabel, link, useNotify } from "../components/common";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
+import { NotPointing, TrustNote } from "../components/forwards";
 import { actions, useAction, useInfo, useProjects, type ProjectView } from "../lib/api";
 import { cn } from "../lib/utils";
 
@@ -11,7 +12,13 @@ export function Forwards() {
   const info = useInfo();
   const notify = useNotify();
   const remove = useAction(actions.removeForward);
-  const forwards = (projects.data ?? []).flatMap((p) => p.forwards.map((f) => ({ ...f, project: p.name, state: p.state })));
+  // One row per address: a forward's usual one (removing it removes the forward), then any URLs it was given
+  const forwards = (projects.data ?? []).flatMap((p) =>
+    p.forwards.flatMap((f) => [
+      { url: f.url, port: f.port, pointsHere: true, remove: f.port as number | string, label: `Stop forwarding ${p.name} port ${f.port}`, project: p.name, state: p.state },
+      ...f.urls.map((u) => ({ url: u.url, port: f.port, pointsHere: u.pointsHere, remove: u.url, label: `Stop serving ${p.name} port ${f.port} at ${u.url}`, project: p.name, state: p.state })),
+    ]),
+  );
   const proxy = info.data?.proxy;
 
   return (
@@ -20,7 +27,7 @@ export function Forwards() {
       {forwards.length > 0 && proxy && (
         <p className={proxy.running ? "mt-2 text-sm text-muted-foreground" : "mt-2 text-sm text-warning"}>
           {proxy.running
-            ? `Served on 127.0.0.1:${proxy.port}. A server in a container must listen on 0.0.0.0.`
+            ? `Served on 127.0.0.1:${[proxy.port, ...proxy.ports].join(", :")}. A server in a container must listen on 0.0.0.0.`
             : "The forwards proxy isn't running, so these won't open. Starting any project brings it back."}
         </p>
       )}
@@ -59,6 +66,7 @@ export function Forwards() {
                     <a href={f.url} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs hover:underline" title={f.url}>
                       {f.url.replace(/^http:\/\//, "")}
                     </a>
+                    {!f.pointsHere && <NotPointing url={f.url} />}
                     <ProjectState project={f.project} state={f.state} className="mt-1 sm:hidden" />
                   </td>
                   <td className="hidden py-2.5 pr-4 sm:table-cell">
@@ -68,9 +76,9 @@ export function Forwards() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label={`Stop forwarding ${f.project} port ${f.port}`}
+                      aria-label={f.label}
                       disabled={remove.isPending}
-                      onClick={() => remove.mutate({ project: f.project, port: f.port }, { onSuccess: notify.done, onError: notify.failed })}
+                      onClick={() => remove.mutate({ project: f.project, port: f.remove }, { onSuccess: notify.done, onError: notify.failed })}
                     >
                       <XIcon />
                     </Button>
@@ -80,6 +88,7 @@ export function Forwards() {
             </tbody>
           </table>
         )}
+        <TrustNote urls={forwards.map((f) => f.url)} />
       </div>
     </>
   );

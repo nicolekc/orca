@@ -30,6 +30,7 @@ clean() {
   docker ps -aq --filter label=orca.project | xargs -r docker rm -f >/dev/null
   docker ps -aq --filter label=orca.proxy | xargs -r docker rm -f >/dev/null
   docker network ls -q --filter label=orca.network | xargs -r docker network rm >/dev/null
+  docker volume rm -f orca-proxy-data >/dev/null
 }
 
 # A fresh ORCA_DIR and folder for a section, and a project folder `demo` in it
@@ -158,6 +159,26 @@ forwards() {
   code=$(docker exec orca-web curl -s -o /dev/null -w '%{http_code}' -H 'Host: 3000.demo.localhost' http://orca-proxy/)
   [ "$code" = 403 ] || fail "a request from another project through the proxy should be refused (got $code)"
   docker exec orca-web curl -s -m 3 -o /dev/null http://orca-demo:3000/ && fail "projects should not reach each other's containers"
+
+  step "a URL is served too, over HTTPS from orca's certificate authority, with paths passed through"
+  "$ORCA" forward 3000 --url https://dev.orca-e2e.test:8443/auth/callback --project demo | tee out.txt
+  grep -q "https://dev.orca-e2e.test:8443 → demo:3000" out.txt || fail "forward should print the URL"
+  grep -q "doesn't point at this Mac" out.txt || fail "forward should say the hostname needs pointing here"
+  CA="$ORCA_DIR/proxy/orca-ca.crt"
+  [ -r "$CA" ] || fail "the certificate authority's certificate should be copied out, readable"
+  https=(curl -fsS --resolve dev.orca-e2e.test:8443:127.0.0.1 --cacert "$CA")
+  for _ in $(seq 20); do "${https[@]}" -o /dev/null https://dev.orca-e2e.test:8443/ 2>/dev/null && break; sleep 0.5; done
+  "${https[@]}" https://dev.orca-e2e.test:8443/ | grep -q "Directory listing" || fail "the URL should reach the server over trusted HTTPS"
+  code=$(curl -s -o /dev/null -w '%{http_code}' --resolve dev.orca-e2e.test:8443:127.0.0.1 --cacert "$CA" https://dev.orca-e2e.test:8443/no/such/path)
+  [ "$code" = 404 ] || fail "a path should reach the server as it is (got $code)"
+  code=$(docker exec orca-web curl -sk -o /dev/null -w '%{http_code}' --connect-to dev.orca-e2e.test:8443:orca-proxy:8443 https://dev.orca-e2e.test:8443/)
+  [ "$code" = 403 ] || fail "a request from another project to the URL should be refused (got $code)"
+
+  step "removing the URL keeps the forward, and frees its port"
+  "$ORCA" forward --remove https://dev.orca-e2e.test:8443 --project demo
+  for _ in $(seq 20); do curl -fs -o /dev/null http://3000.demo.localhost:7320/ && break; sleep 0.5; done
+  curl -fsS http://3000.demo.localhost:7320/ | grep -q "Directory listing" || fail "the usual address should still work"
+  [ -z "$(docker inspect -f '{{index .Config.Labels "orca.ports"}}' orca-proxy)" ] || fail "the proxy should no longer publish 8443"
 
   step "list shows the forward"
   "$ORCA" list | tee out.txt

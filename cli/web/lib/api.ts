@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ActionResult, BoxSettingsView, ProjectDetail, ProjectView } from "../../server/api";
+import type { ActionResult, BoxSettingsView, CertificateAuthority, ProjectDetail, ProjectView } from "../../server/api";
 import type { ProxyState } from "../../proxy";
 import type { Session } from "../../sessions";
 import type { Terminal } from "../../terminals";
@@ -30,7 +30,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 const LIVE = { refetchInterval: 3000 };
 
-export const useInfo = () => useQuery({ queryKey: ["info"], queryFn: () => request<{ version: string; proxy: ProxyState }>("GET", "/api/info"), ...LIVE });
+export const useInfo = () => useQuery({ queryKey: ["info"], queryFn: () => request<{ version: string; proxy: ProxyState; ca: CertificateAuthority }>("GET", "/api/info"), ...LIVE });
 export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () => request<ProjectView[]>("GET", "/api/projects"), ...LIVE });
 export const useProject = (name: string) =>
   useQuery({ queryKey: ["projects", name], queryFn: () => request<ProjectDetail>("GET", `/api/projects/${encodeURIComponent(name)}`), ...LIVE });
@@ -54,7 +54,8 @@ export const actions = {
   up: (project: string) => request<ActionResult>("POST", `${p(project)}/up`),
   stop: (project: string) => request<ActionResult>("POST", `${p(project)}/stop`),
   recreate: (project: string) => request<ActionResult>("POST", `${p(project)}/recreate`),
-  addForward: (v: { project: string; port: string }) => request<ActionResult>("POST", `${p(v.project)}/forwards`, { port: v.port }),
-  removeForward: (v: { project: string; port: number }) => request<ActionResult>("DELETE", `${p(v.project)}/forwards/${v.port}`),
+  addForward: (v: { project: string; port: string; url?: string }) => request<ActionResult>("POST", `${p(v.project)}/forwards`, { port: v.port, url: v.url }),
+  /** A whole forward by its port, or one of its URLs */
+  removeForward: (v: { project: string; port: number | string }) => request<ActionResult>("DELETE", `${p(v.project)}/forwards/${encodeURIComponent(v.port)}`),
   remove: (v: { project: string; confirm: string; home: boolean }) => request<ActionResult>("POST", `${p(v.project)}/delete`, { confirm: v.confirm, home: v.home }),
 };
