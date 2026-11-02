@@ -1,6 +1,6 @@
 # Orca Framework
 
-Composable tools for AI-assisted software development. Six independent pieces that prevent the death spiral of AI-assisted product development — use all of them, or just one.
+Composable tools for AI-assisted software development: a working style, perspectives that bring different lenses to the same work, and a one-shot build mode — use all of them, or just one.
 
 See [WHY.md](WHY.md) for the motivation and design philosophy.
 
@@ -15,122 +15,35 @@ Install Orca: follow https://github.com/nicolekc/orca/blob/main/.claude/skills/i
 ```
 
 In a project that has it, `/install-orca` updates it. This installs:
-- `.orca/` — Framework core (perspectives, processes, seed, templates)
-- `.claude/skills/` — `/orca`, `/discover`, `/refine`, and the design skills the perspectives use
-- `orca-context/` — Scaffold for project-specific context
-- `AGENTS.md` — Project context file, read by Claude (through `CLAUDE.md`, which imports it), Codex and other agents (populate with `/discover`)
-- `.git-hooks/pre-push` (no pushes to main), `.gitignore` additions
-
-### Set up project context
-
-```bash
-cd ~/projects/my-app
-claude
-> /discover
-```
-
-This explores your project and populates AGENTS.md with tech stack, patterns, and testing setup.
-
-### Create a PRD
-
-Write a PRD or have Claude help you create one:
-
-```
-Create a PRD for [describe your feature].
-Save it to orca-context/prds/001-feature-name.json
-```
-
-Refine it with `/refine orca-context/prds/001-feature-name.json`.
-
-### Run Orca
-
-```
-/orca orca-context/prds/001-feature-name.json
-```
-
-Orca reads the PRD, dispatches subagents to work through task pipelines, and pushes when done. Each task flows through a pipeline of perspectives (planner, architect, implementer, code-cleaner, etc.) — each one a subagent with clean context.
+- `.orca/` — Framework core (seed, perspectives, one-shot mode, tools)
+- `.claude/skills/` — Orca's skills: one-shot builds, the design skills the perspectives use, and the installer itself
+- `AGENTS.md` — Project context file, read by Claude (through `CLAUDE.md`, which imports it), Codex and other agents; the installer asks what the project is building
+- `.git-hooks/pre-push` (no pushes to main)
 
 ## How It Works
 
-### The Pipeline Model
+### The Seed
 
-Every PRD task has a pipeline — an ordered list of perspectives that process it:
-
-```json
-{
-  "id": "001",
-  "description": "Add user authentication",
-  "outcome": "Users can log in with email/password",
-  "verification": "Login flow works end-to-end, tests pass",
-  "status": "in_progress",
-  "pipeline": [
-    {"role": "architect", "status": "complete"},
-    {"role": "implementer", "status": "in_progress"},
-    {"role": "code-cleaner", "status": "pending"}
-  ]
-}
-```
-
-The planner decides which perspectives a task needs. The orchestrator walks the pipeline. Each step is a subagent with clean context that does one thing and pushes.
+`.orca/seed.md` is the working style every agent reads first: own the quality loop, read before judging, fix the root cause, stay in scope, keep it simple.
 
 ### Perspectives
 
-Different lenses on the same work. Each perspective reads `.orca/perspectives/<name>.md` for its instructions:
+Different lenses on the same work. Before doing a kind of work, an agent reads `.orca/perspectives/<name>.md`:
 
 | Perspective | What it does |
 |-------------|--------------|
-| **planner** | Reads a task, decides which perspectives process it, writes the pipeline |
-| **architect** | Analyzes the system, designs approaches, may split tasks |
+| **architect** | Analyzes the system and designs approaches |
 | **implementer** | Writes code, runs tests, commits |
+| **code-reviewer** | Evaluates an implementation for correctness, then quality |
 | **code-cleaner** | Applies code review principles to make fixes directly |
 | **design-reviewer** | Catches structural problems in designs early |
-| **spec-reviewer** | Catches specification problems before implementation |
+| **qa-engineer** | Verifies the product the way a user would use it |
 | **explorer** | Maps codebases before modification |
+| **ux-designer** | Routes user-facing work to the design skills |
 
-### The PRD Format
+### One-shot builds
 
-PRDs define tasks with outcomes and verification — not step-by-step instructions:
-
-```json
-{
-  "name": "Feature Name",
-  "description": "What this PRD accomplishes",
-  "signoff": "full",
-  "tasks": [
-    {
-      "id": "001",
-      "description": "What needs to happen and why",
-      "outcome": "What done looks like",
-      "verification": "How to prove it works",
-      "dependencies": [],
-      "status": "pending",
-      "pipeline": []
-    }
-  ]
-}
-```
-
-See `.orca/templates/prd.json` for the template.
-
-### Durable Context
-
-Each task can accumulate context in `orca-context/tasks/<prd-name>/<task-id>/`. Research notes, design decisions, investigation results — anything the next perspective needs. This is how knowledge persists across the pipeline.
-
-## Execution Modes
-
-### Subagent Mode (primary)
-
-For interactive Claude Code sessions. Run `/orca <prd-path>`. Orca dispatches subagents, each handling one pipeline step for one task.
-
-### Bash Loop Mode (Docker)
-
-For headless execution. Install with `--bash-loop` flag, then run inside a Docker container:
-
-```bash
-./orca-loop.sh orca-context/prds/001-feature.json 20
-```
-
-Each iteration reads `ORCA_PROMPT.md` (a thin wrapper around `.orca/orca.md`) and completes one pipeline step.
+`.orca/oneshot.md` builds a whole app from a high-level goal in one autonomous session, through revertable milestones. Its context lives in a project directory: `AGENTS.md`, `RESOURCE-INDEX.md`, `user-preferences/`, searchable resource categories and `scratch/` handoff notes. `/new-project` creates one, `/new-resource` adds a resource category, and `/oneshot` runs the build.
 
 ## Containers: the `orca` command
 
@@ -151,24 +64,22 @@ Each `orca start` opens a terminal in the project's container: a tmux session th
 | Directory | Purpose |
 |-----------|---------|
 | `framework/` | Framework files, installed into projects as `.orca/` |
-| `.orca-tasks/` | Ephemeral agent workspaces (disposable after merge) |
 | `docs/` | Framework design documentation |
-| `.claude/skills/` | Claude Code skills (`/orca`, `/discover`, `/refine`) |
+| `.claude/skills/` | Claude Code skills (`/install-orca`, `/oneshot`, `/new-project`, `/new-resource`, design skills) |
 | `templates/` | Install templates (AGENTS.md.template, CLAUDE.md.template, .git-hooks) |
+| `cli/` | The `orca` command |
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
 | `framework/seed.md` | Working style principles — read before any task |
-| `framework/orca.md` | Orchestrator instructions |
-| `framework/processes/prd.md` | Pipeline model and task lifecycle |
+| `framework/oneshot.md` | One-shot build mode |
 | `.claude/skills/install-orca/` | Installs or updates the framework in a project |
-| `ORCA_PROMPT.md` | Bash-loop mode instructions (thin wrapper around orca.md) |
 
 ## Design Principles
 
-The framework is governed by [11 design principles](docs/design-principles.md). The key ones:
+The framework is governed by [10 design principles](docs/design-principles.md). The key ones:
 
 - **Composable, Not Monolithic** — Each piece is useful alone. No piece requires any other.
 - **Principles Over Prescriptions** — State principles, trust the executor. Don't pre-empt with rigid rules.
@@ -176,7 +87,4 @@ The framework is governed by [11 design principles](docs/design-principles.md). 
 
 ## Git Workflow
 
-- One branch per PRD: `orca/<prd-name>`
-- One PR per PRD, created after the first completed pipeline step
-- The PR evolves with each push — it's a living dashboard of progress
-- Never push to main directly
+- Work on feature branches; never push to main directly (the installed pre-push hook blocks it)
