@@ -6,14 +6,14 @@ This repo is the Orca agent framework — composable tools for AI-assisted softw
 
 - `framework/` — the framework files (seed, perspectives, one-shot mode, tools), installed into projects as `.orca/`
 - `docs/` — Framework design documentation
-- `.claude/skills/` — Claude Code skills, all installed into projects along with `framework/`
+- `.claude/skills/` — Claude Code skills; `install-orca` lists the ones installed into projects
 - `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks. `make check` runs every test that runs here (unit, React, browser); the Docker end-to-end tests (`cli/test/e2e/`) run in CI
 - Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, etc.
 - `container-features.md` — everything orca adds to a project's container (at creation, and every time); keep it in step when adding one
 
 ## Framework / Installed Boundary
 
-**Installed into target projects**: everything in `framework/` (as `.orca/`) and `.claude/skills/`
+**Installed into target projects**: everything in `framework/` (as `.orca/`), and the skills `install-orca` lists
 
 **Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, Docker/bash scripts
 
