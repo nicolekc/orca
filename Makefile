@@ -4,6 +4,10 @@
 
 BUN ?= bun
 VERSION ?= $(shell git rev-parse --short HEAD)
+# The repo orca updates itself and its image from: the one CI builds in, so a fork's builds use the fork
+REPO ?= $(or $(GITHUB_REPOSITORY),orca-infra/orca)
+# The day this commit was made, for showing the changelog entries a newer build adds
+BUILT ?= $(shell git log -1 --format=%cs)
 PLATFORMS := darwin-arm64 darwin-x64 linux-arm64 linux-x64
 HOST := $(shell uname -s | tr A-Z a-z)-$(subst x86_64,x64,$(subst aarch64,arm64,$(shell uname -m)))
 
@@ -37,10 +41,10 @@ e2e: build        ## Run the end-to-end tests against real Docker (CI): make e2e
 build: dist/orca-$(HOST)   ## Build orca for this machine
 
 dist: $(PLATFORMS:%=dist/orca-%)   ## Build orca for every platform, with checksums
-	cd dist && for f in $(PLATFORMS:%=orca-%); do sha256sum $$f > $$f.sha256; done && echo $(VERSION) > version
+	cd dist && for f in $(PLATFORMS:%=orca-%); do sha256sum $$f > $$f.sha256; done && echo $(VERSION) > version && cp ../CHANGELOG.md .
 
 dist/orca-%: $(shell find cli \( -name '*.ts*' -o -name '*.css' -o -name '*.html' \) -not -path '*/test/*') package.json bun.lock
-	$(BUN) cli/build.ts $* $@ $(VERSION)
+	$(BUN) cli/build.ts $* $@ $(VERSION) $(REPO) $(BUILT)
 
 run:              ## Run orca from source: make run ARGS="list"
 	$(BUN) run cli/orca.ts $(ARGS)

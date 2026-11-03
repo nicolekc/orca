@@ -11,7 +11,7 @@ See [WHY.md](WHY.md) for the motivation and design philosophy.
 In your project, ask Claude (or another agent) to follow the install skill:
 
 ```
-Install Orca: follow https://github.com/nicolekc/orca/blob/main/.claude/skills/install-orca/SKILL.md
+Install Orca: follow https://github.com/orca-infra/orca/blob/main/.claude/skills/install-orca/SKILL.md
 ```
 
 In a project that has it, `/install-orca` updates it. This installs:
@@ -50,7 +50,7 @@ Different lenses on the same work. Before doing a kind of work, an agent reads `
 Each project runs in its own container, with its own home (logins, Claude memory, settings) kept on the Mac in `~/.orca/projects/<project>/home`. The `orca` command manages them from the Mac.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nicolekc/orca/main/cli/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/orca-infra/orca/main/cli/install.sh | bash
 orca update        # get the image (and later, newer orca and images)
 orca               # pick a project and start it
 ```
@@ -76,6 +76,7 @@ Each `orca start` opens a terminal in the project's container: a tmux session th
 | `framework/seed.md` | Working style principles — read before any task |
 | `framework/oneshot.md` | One-shot build mode |
 | `.claude/skills/install-orca/` | Installs or updates the framework in a project |
+| `CHANGELOG.md` | What to know, and anything to do, when updating |
 
 ## Design Principles
 

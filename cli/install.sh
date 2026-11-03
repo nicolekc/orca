@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installs the orca command:
-#   curl -fsSL https://raw.githubusercontent.com/nicolekc/orca/main/cli/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/orca-infra/orca/main/cli/install.sh | bash
 #
 # Downloads this machine's build from the repo's latest release (CI publishes each build as
 # its own release, cli-<commit>), checks it against its published checksum, and puts it in the first of these folders that's on PATH and
@@ -8,7 +8,7 @@
 # keeps it current.
 set -euo pipefail
 
-RELEASES="https://github.com/nicolekc/orca/releases"
+RELEASES="https://github.com/orca-infra/orca/releases"
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$(uname -m)" in
