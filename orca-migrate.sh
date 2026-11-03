@@ -61,7 +61,13 @@ fi
 NEW="orca-${FOLDER_NAME}"
 PROJECT_DIR="$HOME/.orca/projects/$FOLDER_NAME"
 HOME_DIR="$PROJECT_DIR/home"
-BACKUP="orca-backup/$(echo "$OLD" | tr '[:upper:]' '[:lower:]'):pre-migration"
+# Image names are stricter than container names (lowercase, no trailing or doubled
+# separators), so e.g. "ralph-." becomes "ralph"; add the container ID if that name is taken
+BACKUP_NAME=$(echo "$OLD" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-*//; s/-*$//')
+BACKUP="orca-backup/${BACKUP_NAME:-container}:pre-migration"
+if docker image inspect "$BACKUP" >/dev/null 2>&1; then
+    BACKUP="orca-backup/${BACKUP_NAME:-container}-$(docker inspect -f '{{.Id}}' "$OLD" | cut -c1-12):pre-migration"
+fi
 
 # Never merge into something already in use; the old container is untouched, so a
 # leftover from a failed run is safe to remove
