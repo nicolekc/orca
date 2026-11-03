@@ -32,55 +32,44 @@ AI has the same problem, arguably worse. A highly specified task description bec
 
 ## P4: Rich Context Over Rigid Plans
 
-Complex tasks need a space for context to accumulate naturally. When a task hits a blocker, an investigation happens, a design evolves, or a worker needs to retry — all of that context is valuable. It should live in a per-task directory, available to any worker who picks up the task.
+Complex work needs a space for context to accumulate naturally. When work hits a blocker, an investigation happens, a design evolves, or a worker needs to retry — all of that context is valuable. It should live in the project, available to any agent who picks up the work.
 
 This means:
-- Each significant task can have a directory for accumulated context (investigation notes, design artifacts, debug logs, prior attempts)
-- Durable context (designs, investigations, decisions) persists until the task merges to main
-- Ephemeral context (debug traces, scratch work) is local to the runner and disposable
-- A new agent looking at a task can get into the nitty-gritty by reading this directory
+- A project has a place for accumulated context (investigation notes, design decisions, handoff notes), named in its AGENTS.md
+- Durable context (designs, investigations, decisions) is kept; handoff notes are deleted once they've been picked up
+- A new agent picking up the work can get into the nitty-gritty by reading it
 
-## P5: Tasks Are Re-doable
+## P5: Two-Directory Pattern
 
-PRDs are merge gates, not auto-merge triggers. A human reviews the build, and if a task went wrong, they can select it and the AI redoes it with new feedback. Dependent tasks automatically cascade — adapting or redoing as needed.
+Framework files (seed, perspectives, tools) are **copied** from the framework repo into a project's `.orca/`. They are not edited there.
 
-This means the task system must support:
-- Marking a task for redo (with human feedback attached)
-- Tracking dependencies between tasks
-- Cascading redos to dependent tasks
-- Recording attempt history
+Project-specific files (the project's own context and knowledge) live outside `.orca/`, where the project's AGENTS.md points to them.
 
-## P6: Two-Directory Pattern
+If a project needs to change a framework file, change the framework. A framework file that projects keep needing to work around was too prescriptive.
 
-Framework files (perspectives, processes, templates) are **copied** from the framework repo into a project. They live in one directory and are not normally edited.
-
-Project-specific files (overrides, knowledge, work state) are **edited** in the project. They live in a separate directory.
-
-Overloads (e.g., project-specific additions to a perspective prompt) mirror the framework directory structure. If an overload needs to *subtract* from a framework file, that's a framework design failure — the framework file was too prescriptive.
-
-## P7: Seed Spaces, Don't Over-Define
+## P6: Seed Spaces, Don't Over-Define
 
 Create directories and bare templates that seed the right structure. Don't pre-define every category, file format, or naming convention. Let the structure grow organically as projects use it.
 
 The framework should be descriptive enough that an AI can figure out what goes where, but not so prescriptive that it creates unnecessary constraints.
 
-## P8: Lightning-Quick Descriptions
+## P7: Lightning-Quick Descriptions
 
 Every framework file that an AI will read costs tokens and attention. Descriptions must be minimal, clear, and front-loaded with the most important information. No ceremony, no announcements, no verbose explanations of things the AI already knows how to do.
 
-## P9: No Custom Vocabulary
+## P8: No Custom Vocabulary
 
 Use plain English. No invented terminology that users or AIs must learn. If a concept needs a name, use the most obvious word for what it is. Think Apple's naming: plain, obvious, no jargon.
 
-Exception: "Orca" as a name for the orchestrator pattern is established and stays.
+Exception: "Orca", the framework's name, is established and stays.
 
-## P10: Model-Agnostic
+## P9: Model-Agnostic
 
 Don't hardcode model tiers, model names, or model-specific behaviors. Today's model hierarchy will change. The framework should work with whatever model is available.
 
 Future consideration: if Claude doesn't add automatic model switching, model routing may become a feature. But not now.
 
-## P11: Circuit Breaker
+## P10: Circuit Breaker
 
 After 3 failed attempts at the same approach, stop and question the approach. Don't keep patching. This applies to:
 - An implementer stuck on the same bug

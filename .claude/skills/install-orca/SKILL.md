@@ -1,40 +1,36 @@
 ---
 name: install-orca
-description: Install the Orca framework into a project, or update it to the latest. Use when asked to install, add, set up or update Orca (its .orca/ folder, skills and orca-context/) in a repo.
+description: Install the Orca framework into a project, or update it to the latest and report what's out of date. Use when asked to install, add, set up or update Orca (its .orca/ folder and skills) in a repo.
 ---
 
 # Install Orca
 
-Install the Orca framework into the current project, a git repo, or update one that has it. Running this again updates it: framework files are replaced, and the project's own files are kept.
+Install the Orca framework into the current project, a git repo, or update one that has it. Nothing is written, replaced or deleted until the user has seen what will change and agreed.
 
 ## 1. Get the source
 
-Use the orca checkout the user names. Otherwise clone it into a temporary folder: `git clone --depth 1 https://github.com/nicolekc/orca`. Below, `SRC` is that checkout.
+Use the orca checkout the user names. Otherwise clone it into a temporary folder: `git clone https://github.com/nicolekc/orca`. Below, `SRC` is that checkout.
 
-## 2. Framework files: copy, replacing what's there
+## 2. Plan, changing nothing
 
-| From `SRC` | To the project |
-|---|---|
-| `framework/` | `.orca/` |
-| `.claude/skills/<name>/`, for `orca`, `discover`, `refine`, `product-ux-design`, `ui-mechanics`, `ui-ux-pro-max`, `ux-designer` | `.claude/skills/<name>/` |
-| `templates/.git-hooks/pre-push` | `.git-hooks/pre-push`, executable |
+- **Framework files**, to be replaced or added:
 
-Then `git config core.hooksPath .git-hooks`, which stops pushes to main or master. If the project already has hooks (in `.git/hooks`, or another `core.hooksPath`), ask first.
+  | From `SRC` | To the project |
+  |---|---|
+  | `framework/` | `.orca/` |
+  | each skill in `.claude/skills/` | `.claude/skills/<name>/` |
+  | `templates/.git-hooks/pre-push` | `.git-hooks/pre-push`, executable, with `git config core.hooksPath .git-hooks` (which stops pushes to main or master) |
 
-On an update, if the project has files in these folders that `SRC` doesn't, list them and ask before removing any. Leave installed dependencies and downloads (`node_modules/`, models) alone.
+- **What's out of date**, on an update. Compare the installed framework (`.orca/`, or the same files under an earlier name such as `.ralph/`) with `SRC`. Whatever the installed version has and `SRC` no longer does is out of date: files, skills, folders it had projects keep, conventions its templates put into project docs, and anything in the project that exists only because of them. `SRC`'s git history shows what was removed or renamed, and why. Then read the project's docs and instructions against the new `seed.md`, for what it now says doesn't belong or should be done differently.
+- **Project files.** If missing, `AGENTS.md` from `templates/AGENTS.md.template` and `CLAUDE.md` from `templates/CLAUDE.md.template` (the line `@AGENTS.md`); a project with only a `CLAUDE.md` might move it to `AGENTS.md`. The project's instructions should point agents to `.orca/seed.md`, and say what the project is building, who it's for, and whether it's general software (the seed's default) or a one-off. Get that from the user if they don't.
 
-## 3. Project files: create only if missing, never change
+Leave installed dependencies and downloads (`node_modules/`, models) alone, and existing git hooks unless the user agrees.
 
-- `AGENTS.md` from `templates/AGENTS.md.template`, and `CLAUDE.md` from `templates/CLAUDE.md.template` (the line `@AGENTS.md`, so Claude reads AGENTS.md too). If the project has a `CLAUDE.md` but no `AGENTS.md`, create neither, and tell the user that to share it with other agents, they can move it to `AGENTS.md` and make `CLAUDE.md` the line `@AGENTS.md`.
-- `orca-context/overrides/`, `knowledge/`, `prds/`, `designs/` and `tasks/`, each with a `.gitkeep`.
-- `.gitignore`: whichever of these lines are missing, under `# Orca`: `.orca-tasks/*/debug-*`, `.orca-tasks/*/scratch-*`, `orca-logs/`.
+## 3. Show the update card, and get agreement
 
-## 4. Bash-loop mode, only if the user asks for it
+A concise summary of everything that would be added, replaced, changed or deleted, and what's out of date but needs the user's judgment, each with a short reason. Present it however reads best, and settle it with the user however works: they may approve it all, leave things out or change them. When it's unclear whether something still serves the project, leave it to them.
 
-Copy `ORCA_PROMPT.md`, `orca-loop.sh` and `orca-once.sh` from `SRC` to the project root, replacing what's there; the scripts executable.
-
-## 5. Finish
+## 4. Apply what was agreed, and finish
 
 - Remove the temporary clone, if you made one.
-- Don't commit. Tell the user what was created, updated, and left as it was.
-- Next steps: `/discover` fills in `AGENTS.md`; then commit.
+- Don't commit. Tell the user what was done.

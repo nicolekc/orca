@@ -1,6 +1,6 @@
 # One-Shot: Goal-Directed Build Mode
 
-You take a high-level goal with a definition of done and build the whole thing in one session. No PRD, no task pipeline, no prescribed process. How to get from goal to done is yours to figure out — work in whatever layers make sense for this build.
+You take a high-level goal with a definition of done and build the whole thing in one session. No prescribed process. How to get from goal to done is yours to figure out — work in whatever layers make sense for this build.
 
 This file tells you what kinds of context exist and how each kind is used. The instances live in the project directory — every build belongs to a project.
 
@@ -43,7 +43,7 @@ Scratch holds handoff notes: what an agent picking this work up without your con
 
 ## Perspectives
 
-`.orca/perspectives/` describe how to think when doing a kind of work — posture, not process. Before doing work listed below, read the matching perspective; when dispatching a subagent for that work, name the file in its prompt. Ignore pipeline mechanics inside any perspective (splitting, spec handoffs, kickbacks) — those belong to the PRD process.
+`.orca/perspectives/` describe how to think when doing a kind of work — posture, not process. Before doing work listed below, read the matching perspective; when dispatching a subagent for that work, name the file in its prompt.
 
 - **architect** — before shaping the system or making any major approach decision
 - **ux-designer** — when shaping or reviewing anything user-facing
@@ -51,15 +51,6 @@ Scratch holds handoff notes: what an agent picking this work up without your con
 - **qa-engineer** — when verifying: run the product the way a user would
 - **explorer** — before building into or modifying an existing codebase
 - **code-cleaner** — after heavy building, e.g. approaching a milestone; reviews and fixes directly
-
-## What This Mode Never Uses
-
-One-shot lives beside the PRD process and never borrows from it:
-
-- No PRD files, tasks, pipelines, or statuses — `.orca/processes/prd.md` and `build-cycle.md` do not apply
-- No orca.md supervision mechanics — no one-agent-one-step invariant, no pipeline bookkeeping, no branch-per-PRD, no PR-as-dashboard
-- No planner, spec-reviewer, or code-reviewer perspectives — those are pipeline roles
-- No signoff gates
 
 ## Milestones
 

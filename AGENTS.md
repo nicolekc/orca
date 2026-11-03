@@ -4,29 +4,25 @@ This repo is the Orca agent framework — composable tools for AI-assisted softw
 
 ## What This Repo Contains
 
-- `framework/` — the framework files (perspectives, processes, seed, templates), installed into projects as `.orca/`
-- `.orca-tasks/` — Ephemeral per-task agent workspaces (disposable after merge)
+- `framework/` — the framework files (seed, perspectives, one-shot mode, tools), installed into projects as `.orca/`
 - `docs/` — Framework design documentation
-- `.claude/skills/` — Claude Code skills (`/orca`, `/discover`, `/refine`)
+- `.claude/skills/` — Claude Code skills, all installed into projects along with `framework/`
 - `cli/` — the `orca` command (TypeScript, compiled with Bun) that runs on the Mac and manages project containers; `make help` lists its build and test tasks. `make check` runs every test that runs here (unit, React, browser); the Docker end-to-end tests (`cli/test/e2e/`) run in CI
-- Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, `orca-loop.sh`, etc.
+- Docker/bash infrastructure — `Dockerfile`, `orca-migrate.sh`, etc.
 - `container-features.md` — everything orca adds to a project's container (at creation, and every time); keep it in step when adding one
 
 ## Framework / Installed Boundary
 
-**Installed into target projects** (via `.orca/`): `seed.md`, `perspectives/`, `orca.md`, `processes/`, `templates/`
+**Installed into target projects**: everything in `framework/` (as `.orca/`) and `.claude/skills/`
 
 **Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, Docker/bash scripts
 
 ## Essential Reading
 
-1. **`docs/design-principles.md`** — 11 principles governing all framework design. Key ones:
-   - **P2 (Principles Over Prescriptions)** — State principles, trust the executor
-   - **P3 (Specification-Creativity Tradeoff)** — Over-specifying REDUCES quality
-   - **P8 (Lightning-Quick Descriptions)** — Every file costs tokens. Be minimal.
-
-2. **`docs/structure.md`** — How framework files are organized
-3. **`docs/execution-strategies.md`** — Subagent and bash loop modes
+**`docs/design-principles.md`** — 10 principles governing all framework design. Key ones:
+- **P2 (Principles Over Prescriptions)** — State principles, trust the executor
+- **P3 (Specification-Creativity Tradeoff)** — Over-specifying REDUCES quality
+- **P7 (Lightning-Quick Descriptions)** — Every file costs tokens. Be minimal.
 
 ## Framework Design Anti-Patterns
 

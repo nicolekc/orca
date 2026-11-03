@@ -1,6 +1,6 @@
 ---
 name: oneshot
-description: Build a whole app from a high-level goal in one autonomous session, using the project's context and the framework's perspectives and skills — no PRD or task pipeline
+description: Build a whole app from a high-level goal in one autonomous session, using the project's context and the framework's perspectives and skills
 ---
 
 # One-Shot
