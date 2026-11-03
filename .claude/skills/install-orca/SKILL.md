@@ -5,32 +5,21 @@ description: Install the Orca framework into a project, or update it to the late
 
 # Install Orca
 
-Install the Orca framework into the current project, a git repo, or update one that has it. Nothing is written, replaced or deleted until the user has seen what will change and agreed.
+Install Orca into the project you're run in, or update it, from the orca repo the user names or the public one (github.com/nicolekc/orca), with its history. Git repos nested in the project are projects of their own.
 
-## 1. Get the source
+Nothing is written, replaced or removed until the user has seen what will change and agreed.
 
-Use the orca checkout the user names. Otherwise clone it into a temporary folder: `git clone https://github.com/nicolekc/orca`. Below, `SRC` is that checkout.
+## What Orca installs
 
-## 2. Plan, changing nothing
+- `framework/`, as `.orca/`
+- These skills, into `.claude/skills/`: `install-orca`, `oneshot`, `new-project`, `new-resource`, and the design skills the perspectives use (`product-ux-design`, `ui-mechanics`, `ui-ux-pro-max`, `ux-designer`)
+- The pre-push hook in `templates/`, which stops pushes to main, without disturbing hooks the project already has
+- `AGENTS.md` and `CLAUDE.md` from `templates/`, if missing. The project's instructions should point agents to `.orca/seed.md` and say what the project is and who it's for, and for software, whether it's general (the seed's default) or a one-off; ask the user for what's missing.
 
-- **Framework files**, to be replaced or added:
+## On an update
 
-  | From `SRC` | To the project |
-  |---|---|
-  | `framework/` | `.orca/` |
-  | each skill in `.claude/skills/` | `.claude/skills/<name>/` |
-  | `templates/.git-hooks/pre-push` | `.git-hooks/pre-push`, executable, with `git config core.hooksPath .git-hooks` (which stops pushes to main or master) |
+Whatever an earlier Orca installed (in `.orca/`, or under an earlier name such as `.ralph/`) and this one doesn't is out of date, including conventions it had projects follow; the history says what was removed and why. Look one level into the project for files and instructions built on what changed, and name them for the user to consider. Change nothing of the project's own beyond that.
 
-- **What's out of date**, on an update. Compare the installed framework (`.orca/`, or the same files under an earlier name such as `.ralph/`) with `SRC`. Whatever the installed version has and `SRC` no longer does is out of date: files, skills, folders it had projects keep, conventions its templates put into project docs, and anything in the project that exists only because of them. `SRC`'s git history shows what was removed or renamed, and why. Then read the project's docs and instructions against the new `seed.md`, for what it now says doesn't belong or should be done differently.
-- **Project files.** If missing, `AGENTS.md` from `templates/AGENTS.md.template` and `CLAUDE.md` from `templates/CLAUDE.md.template` (the line `@AGENTS.md`); a project with only a `CLAUDE.md` might move it to `AGENTS.md`. The project's instructions should point agents to `.orca/seed.md`, and say what the project is building, who it's for, and whether it's general software (the seed's default) or a one-off. Get that from the user if they don't.
+## The update card
 
-Leave installed dependencies and downloads (`node_modules/`, models) alone, and existing git hooks unless the user agrees.
-
-## 3. Show the update card, and get agreement
-
-A concise summary of everything that would be added, replaced, changed or deleted, and what's out of date but needs the user's judgment, each with a short reason. Present it however reads best, and settle it with the user however works: they may approve it all, leave things out or change them. When it's unclear whether something still serves the project, leave it to them.
-
-## 4. Apply what was agreed, and finish
-
-- Remove the temporary clone, if you made one.
-- Don't commit. Tell the user what was done.
+Before changing anything, show a concise card of what would be added, replaced, changed or removed, and what the user may want to look at, each with a short reason. Present it and settle it with the user however works best. Then apply what was agreed, removing only what the card listed, and don't commit.

@@ -51,10 +51,6 @@ Design for the pit of success: make it easy to do the right thing and hard to do
 
 Every fact that must be remembered will eventually be forgotten; a design that needs less remembering needs less reviewing.
 
-## Autonomy
-
-Work until done. Don't ask for permission, confirmation, or selection between options. Stop only when: (1) done, (2) truly blocked on something unsolvable, (3) a human asks. No "present 3 options." No "you MUST ask the user."
-
 ## Proportionality
 
 Match effort to complexity. A rename doesn't need an architect. A system redesign doesn't get a one-line approach. You decide what's proportionate — this is judgment, not a checklist.
