@@ -68,6 +68,17 @@ test("delete --home also removes the home and the record", async () => {
   expect(existsSync(t.dir)).toBe(false);
 });
 
+test("delete --home shows what's in the home, largest first, and the record's files", async () => {
+  const t = withContainer();
+  mkdirSync(join(t.dir, "home/.claude"));
+  writeFileSync(join(t.dir, "home/.claude/memory.md"), "x".repeat(2500));
+  writeFileSync(join(t.dir, "home/.gitconfig"), "[user]");
+  writeFileSync(join(t.dir, "forwards"), "3000\n");
+  await del(t.ctx, "app", { home: true });
+  expect(t.output()).toMatch(/\.claude\/\s+2\.5 KB\n\s+\.gitconfig\s+6 B/);
+  expect(t.output()).toMatch(/record in .*: (project-path, forwards|forwards, project-path)/);
+});
+
 test("delete never removes the code of a project made by orca new", async () => {
   const t = fakeContext({}, ["web"]);
   const dir = record(t.ctx.orcaDir, "web", join(t.ctx.orcaDir, "projects/web/workspace"));

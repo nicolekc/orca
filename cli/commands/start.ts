@@ -207,6 +207,9 @@ function claimRecord(ctx: Context, name: string, folder: string) {
 
 const isEmpty = (dir: string) => !existsSync(dir) || readdirSync(dir).length === 0;
 
+/** What recreating a container on a newer image keeps, and what it resets. */
+export const RECREATING = ["Kept:  the project folder, ~ (logins, memory, settings, installed tools)", "Reset: everything else in the container, such as system packages"];
+
 async function noticeOutdated(ctx: Context, used: string, folder: string, name: string) {
   const latest = await latestImage(ctx);
   if (!latest || latest.id === used) return;
@@ -220,7 +223,6 @@ async function noticeOutdated(ctx: Context, used: string, folder: string, name: 
       : "Image update available: this container was made from an older orca image.",
   );
   ctx.print(`  To switch:  orca stop ${name}, then orca start --fresh ${tilde(ctx, folder)}`);
-  ctx.print(`  Kept:  the project folder, ~ (logins, memory, settings, installed tools)`);
-  ctx.print(`  Reset: everything else in the container, such as system packages`);
+  for (const line of RECREATING) ctx.print(`  ${line}`);
   ctx.print();
 }
