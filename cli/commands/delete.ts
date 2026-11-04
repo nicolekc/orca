@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { OrcaError, tilde, type Context } from "../context";
 import { docker, homeDir, listContainers, loadProjects, recordDir, volumeName } from "../projects";
@@ -28,11 +28,16 @@ export async function del(ctx: Context, name: string, opts: DeleteOptions): Prom
   const hasVolume = volume !== null && (await ctx.docker.run(["volume", "inspect", volume])).code === 0;
   const home = homeDir(ctx, name);
   const removeHome = Boolean(opts.home) && existsSync(home);
+  const record = recordDir(ctx, name);
+  // The record goes with the home, unless it holds the project's code (orca new)
+  const removeRecord = removeHome && !existsSync(join(record, "workspace"));
+  const recordFiles = removeRecord ? readdirSync(record).filter((f) => f !== "home") : [];
 
   const removing = [
     p.container && `container ${p.container.name}`,
     hasVolume && `its node_modules volume, ${volume}`,
-    removeHome && `the home ${tilde(ctx, home)}: logins, Claude memory and sessions, settings, installed tools`,
+    removeHome && [`the home ${tilde(ctx, home)}: logins, Claude memory and sessions, settings, installed tools`, ...contents(home).map((l) => `    ${l}`)].join("\n"),
+    recordFiles.length && `its record in ${tilde(ctx, record)}: ${recordFiles.join(", ")}`,
   ].filter(Boolean) as string[];
   if (removing.length === 0) {
     ctx.print(`${name} has no container${existsSync(home) ? "; its home stays unless you pass --home" : ""}. Nothing to delete.`);
@@ -55,10 +60,8 @@ export async function del(ctx: Context, name: string, opts: DeleteOptions): Prom
   if (p.container) await docker(ctx, ["rm", p.container.name]);
   if (hasVolume) await docker(ctx, ["volume", "rm", volume!]);
   if (removeHome) {
-    const record = recordDir(ctx, name);
     rmSync(home, { recursive: true, force: true });
-    // The record goes too, unless it holds the project's code (orca new)
-    if (!existsSync(join(record, "workspace"))) rmSync(record, { recursive: true, force: true });
+    if (removeRecord) rmSync(record, { recursive: true, force: true });
     else if (readdirSync(record).length) ctx.print(`The code stays in ${tilde(ctx, join(record, "workspace"))}; remove it yourself if you don't need it.`);
   }
   // The project's network goes with its container; the proxy leaves it first
@@ -70,4 +73,36 @@ export async function del(ctx: Context, name: string, opts: DeleteOptions): Prom
   }
   if (allForwards(ctx).length || (await listContainers(ctx)).some((c) => c.name === PROXY)) await syncProxy(ctx);
   ctx.print(`Deleted.`);
+}
+
+/** What's in a folder, as lines: its top-level entries, largest first, with their sizes. */
+function contents(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true })
+    .map((e) => ({ name: e.name + (e.isDirectory() ? "/" : ""), size: sizeOf(join(dir, e.name)) }))
+    .sort((a, b) => b.size - a.size);
+  if (entries.length === 0) return ["(empty)"];
+  const shown = entries.slice(0, 12);
+  const rest = entries.slice(shown.length);
+  const width = Math.max(...shown.map((e) => e.name.length));
+  const lines = shown.map((e) => `${e.name.padEnd(width)}  ${bytes(e.size)}`);
+  if (rest.length) lines.push(`…and ${rest.length} more, ${bytes(rest.reduce((n, e) => n + e.size, 0))}`);
+  return lines;
+}
+
+/** A file's size, or everything under a folder; symlinks count as themselves, never followed. */
+function sizeOf(path: string): number {
+  try {
+    const s = lstatSync(path);
+    if (!s.isDirectory()) return s.size;
+    return readdirSync(path).reduce((n, e) => n + sizeOf(join(path, e)), 0);
+  } catch {
+    return 0;
+  }
+}
+
+function bytes(n: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (n >= 1000 && i < units.length - 1) (n /= 1000), i++;
+  return `${i === 0 || n >= 10 ? Math.round(n) : n.toFixed(1)} ${units[i]}`;
 }

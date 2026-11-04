@@ -3,9 +3,9 @@ import { useState } from "react";
 import { IMAGE_UPDATE, stateOf, symbol, tone } from "../present";
 import type { Project } from "../projects";
 
-export type Choice = { action: "start" | "delete"; project: string } | { action: "new" } | { action: "quit" };
+export type Choice = { action: "start" | "update" | "delete"; project: string } | { action: "new" } | { action: "quit" };
 
-/** The project list `orca` opens on: pick one to start, or make, delete, quit. `kept`: what keeps each running one up. */
+/** The project list `orca` opens on: pick one to start, or update its image, make, delete, quit. `kept`: what keeps each running one up. */
 export function Picker({
   projects,
   home,
@@ -31,6 +31,7 @@ export function Picker({
     if (key.downArrow || input === "j") setSelected((i) => Math.min(i + 1, projects.length - 1));
     if (key.upArrow || input === "k") setSelected((i) => Math.max(i - 1, 0));
     if (key.return) choose({ action: "start", project: projects[selected].name });
+    if (input === "u" && projects[selected].outdated) choose({ action: "update", project: projects[selected].name });
     if (input === "d") choose({ action: "delete", project: projects[selected].name });
   });
 
@@ -61,7 +62,11 @@ export function Picker({
           );
         })
       )}
-      <Text dimColor>{projects.length ? "↑↓ move · enter start · n new · d delete · q quit" : "n new · q quit"}</Text>
+      <Text dimColor>
+        {projects.length
+          ? `↑↓ move · enter start${projects[selected].outdated ? " · u update image" : ""} · n new · d delete · q quit`
+          : "n new · q quit"}
+      </Text>
     </Box>
   );
 }

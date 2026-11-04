@@ -1,22 +1,19 @@
 #!/usr/bin/env bun
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { del } from "./commands/delete";
 import { forward } from "./commands/forward";
 import { list } from "./commands/list";
 import { create } from "./commands/new";
+import { pick } from "./commands/pick";
 import { settings } from "./commands/settings";
 import { start } from "./commands/start";
 import { stop } from "./commands/stop";
 import { BUILT, update, VERSION } from "./commands/update";
-import { OrcaError, realContext, type Context } from "./context";
-import { keptBy } from "./present";
-import { loadProjects } from "./projects";
+import { OrcaError, realContext } from "./context";
 import { serve } from "./server/serve";
 import { projectAt } from "./proxy";
-import { activities } from "./terminals";
-import { drawView, show, VIEW_COMMAND } from "./ui/show";
+import { drawView, VIEW_COMMAND } from "./ui/show";
 
 const HELP = `orca: each project in its own container, with its own home
 
@@ -157,34 +154,6 @@ async function main(all: string[]): Promise<number> {
       return 0;
     default:
       throw new OrcaError(`There's no command "${command}".`, "See: orca --help");
-  }
-}
-
-/** The picker; without a terminal, the plain list instead. */
-async function pick(ctx: Context): Promise<number> {
-  const projects = await loadProjects(ctx);
-  if (!ctx.ask) return list(ctx, {}).then(() => 0);
-  const live = await activities(ctx, projects);
-  const kept = Object.fromEntries([...live].map(([name, a]) => [name, keptBy(a)]));
-  const choice = (await show(join(ctx.orcaDir, "orca.log"), "picker", { projects, home: ctx.home, kept })) ?? { action: "quit" };
-
-  switch (choice.action) {
-    case "start": {
-      const name = choice.project;
-      const p = projects.find((x) => x.name === name)!;
-      const folder = p.folder ?? p.legacy?.workspace;
-      if (!folder) throw new OrcaError(`${p.name} has no project folder on record.`);
-      return start(ctx, folder, {});
-    }
-    case "new": {
-      const name = (await ctx.ask("Name for the new project: ")).trim();
-      return name ? create(ctx, name) : 0;
-    }
-    case "delete":
-      await del(ctx, choice.project, {});
-      return 0;
-    case "quit":
-      return 0;
   }
 }
 
