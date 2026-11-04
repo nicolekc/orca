@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: diff
-        run: .github/changed.sh cli package.json bun.lock bunfig.toml tsconfig.json Makefile .github/workflows/cli.yml
+        run: .github/changed.sh cli CHANGELOG.md package.json bun.lock bunfig.toml tsconfig.json Makefile .github/workflows/cli.yml
 
   test:
     runs-on: ubuntu-24.04
@@ -93,7 +93,7 @@ jobs:
         run: |
           tag="cli-$(cat dist/version)"
           gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true   # a re-run of this commit
-          gh release create "$tag" dist/orca-* dist/version --draft --target "$GITHUB_SHA" \
+          gh release create "$tag" dist/orca-* dist/version dist/CHANGELOG.md --draft --target "$GITHUB_SHA" \
             --title "orca $(cat dist/version)" --notes "The orca command, built from $GITHUB_SHA. Install: cli/install.sh"
           # The latest release's commit; none yet (a 404) makes this one the latest
           latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" -q .target_commitish 2>/dev/null) || latest=""

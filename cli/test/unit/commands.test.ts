@@ -5,7 +5,7 @@ import { del } from "../../commands/delete";
 import { list } from "../../commands/list";
 import { create } from "../../commands/new";
 import { stop } from "../../commands/stop";
-import { update } from "../../commands/update";
+import { changesSince, RELEASES, REMOTE_IMAGE, update } from "../../commands/update";
 import { fakeContext } from "../support/fake";
 
 function record(orcaDir: string, name: string, folder: string) {
@@ -121,8 +121,8 @@ test("update pulls the published image and names it orca:latest", async () => {
   const t = fakeContext({ latest: "sha256:old", pulled: "sha256:new" });
   await update(t.ctx, { self: false });
   // In the terminal, to show its progress
-  expect(t.attached).toContainEqual(["pull", "ghcr.io/nicolekc/orca:latest"]);
-  expect(t.calls).toContainEqual(["tag", "ghcr.io/nicolekc/orca:latest", "orca:latest"]);
+  expect(t.attached).toContainEqual(["pull", REMOTE_IMAGE]);
+  expect(t.calls).toContainEqual(["tag", REMOTE_IMAGE, "orca:latest"]);
   expect(t.output()).toContain("updated");
 });
 
@@ -143,10 +143,10 @@ function selfUpdate(t: ReturnType<typeof fakeContext>, files: Record<string, str
   writeFileSync(execPath, "old binary");
   // files are keyed by their path under the repo's releases
   const fetch = (async (url: string) => {
-    const path = String(url).replace("https://github.com/nicolekc/orca/releases/", "");
+    const path = String(url).replace(`${RELEASES}/`, "");
     return path in files ? new Response(files[path]) : new Response("", { status: 404 });
   }) as unknown as typeof globalThis.fetch;
-  return { execPath, opts: { version, execPath, fetch, platform: "darwin", arch: "arm64" } };
+  return { execPath, opts: { version, built: "2026-11-01", execPath, fetch, platform: "darwin", arch: "arm64" } };
 }
 
 const sha = (s: string) => new Bun.CryptoHasher("sha256").update(s).digest("hex");
@@ -264,4 +264,37 @@ test("list shows which running projects are kept up", async () => {
   expect(t.output()).toContain("running, kept up, 2 terminals");
   await list(t.ctx, { json: true });
   expect(t.output()).toContain('"keptUp": true');
+});
+
+test("update shows what the changelog says since the build it replaced, action needed first", async () => {
+  const t = fakeContext();
+  const s = selfUpdate(t, {
+    "latest/download/version": "bbb",
+    "download/cli-bbb/orca-darwin-arm64": "new binary",
+    "download/cli-bbb/orca-darwin-arm64.sha256": sha("new binary"),
+    "download/cli-bbb/CHANGELOG.md": "# Changelog\n\n## 2026-11-05\n\n- New: `orca thing`.\n- **Action needed:** run\n  `orca fix`.\n\n## 2026-10-01\n\n- Old news.\n",
+  });
+  await update(t.ctx, { self: s.opts });
+  const out = t.output();
+  expect(out.indexOf("Action needed: run orca fix.")).toBeGreaterThan(-1);
+  expect(out.indexOf("Action needed")).toBeLessThan(out.indexOf("New: orca thing."));
+  expect(out).not.toContain("Old news");
+});
+
+test("update without a changelog in the release still updates", async () => {
+  const t = fakeContext();
+  const s = selfUpdate(t, {
+    "latest/download/version": "bbb",
+    "download/cli-bbb/orca-darwin-arm64": "new binary",
+    "download/cli-bbb/orca-darwin-arm64.sha256": sha("new binary"),
+  });
+  await update(t.ctx, { self: s.opts });
+  expect(readFileSync(s.execPath, "utf8")).toBe("new binary");
+  expect(t.output()).not.toContain("What's new");
+});
+
+test("changelog entries include the build's own day, and none without a date", () => {
+  const log = "## 2026-11-01\n\n- Same day.\n\n## 2026-10-31\n\n- Before.\n";
+  expect(changesSince(log, "2026-11-01")).toEqual(["Same day."]);
+  expect(changesSince(log, "")).toEqual([]);
 });

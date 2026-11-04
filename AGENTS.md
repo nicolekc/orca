@@ -15,7 +15,7 @@ This repo is the Orca agent framework — composable tools for AI-assisted softw
 
 **Installed into target projects**: everything in `framework/` (as `.orca/`), and the skills `install-orca` lists
 
-**Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, Docker/bash scripts
+**Stays in the orca repo only**: `docs/`, `AGENTS.md`, `CLAUDE.md`, `CHANGELOG.md`, Docker/bash scripts
 
 ## Essential Reading
 
@@ -37,6 +37,10 @@ From analysis of OMC, Superpowers, and Gas Town:
 ## Container Trust Boundary
 
 Agents in project containers are treated as untrusted by the tooling on the Mac. Current guards, and why: containers see only their own home under `~/.orca` (so secrets there, like the dashboard token, stay out of reach); forwards are reachable from the Mac but not from other projects' containers; the certificate authority behind HTTPS forwards, which the Mac is asked to trust, keeps its key in a Docker volume only the proxy mounts; the `orca serve` dashboard listens on loopback and requires its token, with cross-site and DNS-rebinding checks, because containers and web pages can both reach the Mac's loopback. Change these when there's reason to, keeping the boundary in mind.
+
+## Changelog
+
+`CHANGELOG.md` is what people using Orca should know, not the history: anything they have to do after updating (an entry starting **Action needed:**), changes they'd notice, and new things worth knowing about. Add the entry in the PR that makes the change, under that day's `## yyyy-mm-dd`; `orca update` and `install-orca` read it.
 
 ## Git Rules
 

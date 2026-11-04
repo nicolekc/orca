@@ -5,7 +5,7 @@ description: Install the Orca framework into a project, or update it to the late
 
 # Install Orca
 
-Install Orca into the project you're run in, or update it, from the orca repo the user names or the public one (github.com/nicolekc/orca), with its history. Git repos nested in the project are projects of their own.
+Install Orca into the project you're run in, or update it, from the orca repo the user names or the public one (github.com/orca-infra/orca), with its history. Git repos nested in the project are projects of their own.
 
 Nothing is written, replaced or removed until the user has seen what will change and agreed.
 
@@ -19,6 +19,8 @@ Nothing is written, replaced or removed until the user has seen what will change
 ## On an update
 
 Whatever an earlier Orca installed (in `.orca/`, or under an earlier name such as `.ralph/`) and this one doesn't is out of date, including conventions it had projects follow; the history says what was removed and why. Look one level into the project for files and instructions built on what changed, and name them for the user to consider. Change nothing of the project's own beyond that.
+
+The orca repo's `CHANGELOG.md` says what users should know; put its entries since the project's last Orca update (its history says when) on the card, those marked **Action needed** first.
 
 ## The update card
 

@@ -9,7 +9,7 @@ import { create } from "./commands/new";
 import { settings } from "./commands/settings";
 import { start } from "./commands/start";
 import { stop } from "./commands/stop";
-import { update, VERSION } from "./commands/update";
+import { BUILT, update, VERSION } from "./commands/update";
 import { OrcaError, realContext, type Context } from "./context";
 import { keptBy } from "./present";
 import { loadProjects } from "./projects";
@@ -153,7 +153,7 @@ async function main(all: string[]): Promise<number> {
     case "serve":
       return serve(ctx, { open: !values["no-open"] });
     case "update":
-      await update(ctx, { self: { version: VERSION, execPath: process.execPath, fetch, platform: process.platform, arch: process.arch } });
+      await update(ctx, { self: { version: VERSION, built: BUILT, execPath: process.execPath, fetch, platform: process.platform, arch: process.arch } });
       return 0;
     default:
       throw new OrcaError(`There's no command "${command}".`, "See: orca --help");

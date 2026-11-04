@@ -2,19 +2,23 @@ import { chmodSync, renameSync, writeFileSync } from "node:fs";
 import { OrcaError, type Context } from "../context";
 import { docker, latestImage } from "../projects";
 
-export const REMOTE_IMAGE = "ghcr.io/nicolekc/orca:latest";
-/**
- * CI publishes each build as its own release, cli-<commit>, holding orca-<os>-<arch>, its
- * .sha256, and `version`; the newest is marked latest. Reading `version` from the latest
- * first, then everything else from that one release, keeps a download from mixing two builds.
- */
-export const RELEASES = "https://github.com/nicolekc/orca/releases";
-
-declare const ORCA_VERSION: string | undefined;
+declare const ORCA_VERSION: string | undefined, ORCA_REPO: string | undefined, ORCA_BUILT: string | undefined;
 /** The commit this `orca` was built from; "dev" when running from source. */
 export const VERSION = typeof ORCA_VERSION === "string" ? ORCA_VERSION : "dev";
+/** The repo it was built in (owner/name), which it updates itself and its image from. */
+export const REPO = typeof ORCA_REPO === "string" ? ORCA_REPO : "orca-infra/orca";
+/** The day its commit was made (yyyy-mm-dd), so an update can show the changelog entries since. */
+export const BUILT = typeof ORCA_BUILT === "string" ? ORCA_BUILT : "";
 
-export type SelfUpdate = { version: string; execPath: string; fetch: typeof fetch; platform: string; arch: string };
+export const REMOTE_IMAGE = `ghcr.io/${REPO.toLowerCase()}:latest`;
+/**
+ * CI publishes each build as its own release, cli-<commit>, holding orca-<os>-<arch>, its
+ * .sha256, `version` and CHANGELOG.md; the newest is marked latest. Reading `version` from the
+ * latest first, then everything else from that one release, keeps a download from mixing two builds.
+ */
+export const RELEASES = `https://github.com/${REPO}/releases`;
+
+export type SelfUpdate = { version: string; built: string; execPath: string; fetch: typeof fetch; platform: string; arch: string };
 
 export async function update(ctx: Context, opts: { self: SelfUpdate | false }): Promise<void> {
   const before = (await latestImage(ctx))?.id;
@@ -59,9 +63,33 @@ async function updateSelf(ctx: Context, s: SelfUpdate) {
     chmodSync(next, 0o755);
     renameSync(next, s.execPath);
   } catch {
-    throw new OrcaError(`Can't replace ${s.execPath}.`, `Reinstall it: curl -fsSL https://raw.githubusercontent.com/nicolekc/orca/main/cli/install.sh | bash`);
+    throw new OrcaError(`Can't replace ${s.execPath}.`, `Reinstall it: curl -fsSL https://raw.githubusercontent.com/${REPO}/main/cli/install.sh | bash`);
   }
   ctx.print(`orca: updated (${s.version} → ${latest}).`);
+
+  // Extra: a missing or unreadable changelog never fails an update that has already happened
+  const changelog = await s.fetch(`${RELEASES}/download/cli-${latest}/CHANGELOG.md`).catch(() => null);
+  const news = changelog?.ok ? changesSince(await changelog.text(), s.built) : [];
+  if (news.length) ctx.print(["", "What's new (CHANGELOG.md):", ...news.map((n) => `  ${n}`)].join("\n"));
+}
+
+/**
+ * The entries of CHANGELOG.md dated on or after `built`, action needed first, as plain text.
+ * Its sections are `## yyyy-mm-dd` with `- ` entries; its own day is included, since a build
+ * can't tell whether it came before or after that day's entries. No date: none are shown.
+ */
+export function changesSince(changelog: string, built: string): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(built)) return [];
+  const entries: string[] = [];
+  let date = "";
+  for (const line of changelog.split("\n")) {
+    const heading = line.match(/^## (\d{4}-\d{2}-\d{2})/);
+    if (heading) date = heading[1]!;
+    else if (line.startsWith("- ") && date >= built) entries.push(line.slice(2));
+    else if (/^\s+\S/.test(line) && entries.length && date >= built) entries[entries.length - 1] += " " + line.trim();
+  }
+  const plain = entries.map((e) => e.replace(/\*\*|`/g, ""));
+  return [...plain.filter((e) => e.startsWith("Action needed")), ...plain.filter((e) => !e.startsWith("Action needed"))];
 }
 
 /** Reads a download, showing how far along it is when there's a terminal to show it in. */
